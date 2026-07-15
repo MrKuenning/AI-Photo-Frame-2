@@ -73,6 +73,9 @@
 }
 
 .nav-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   color: var(--text-secondary);
   font-weight: 500;
   padding: var(--space-xs) var(--space-sm);

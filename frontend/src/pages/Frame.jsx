@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useToggles } from '../hooks/useToggles';
 import { fetchLatest, deleteMedia, flagMedia, markSafe } from '../utils/api';
@@ -6,6 +7,7 @@ import { getMediaFileUrl } from '../utils/api';
 import './Frame.css';
 
 export default function Frame() {
+  const navigate = useNavigate();
   const [latestItem, setLatestItem] = useState(null);
   const [history, setHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
@@ -74,14 +76,16 @@ export default function Frame() {
   });
 
   // Action Handlers
-  const handleDelete = async (e) => {
+  const handleFullscreen = (e) => {
     e.stopPropagation();
-    if (!latestItem) return;
-    try {
-      await deleteMedia(latestItem.id);
-      loadLatest();
-    } catch (err) {
-      alert(`Error deleting: ${err.message}`);
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+      });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
     }
   };
 
@@ -144,16 +148,26 @@ export default function Frame() {
       <div className="nav-area left" onClick={(e) => { e.stopPropagation(); handlePrev(); }} />
       <div className="nav-area right" onClick={(e) => { e.stopPropagation(); handleNext(); }} />
 
+      {/* Top Right Controls */}
+      <div className={`frame-top-right ${showControls ? 'visible' : ''}`} onClick={e => e.stopPropagation()}>
+        <div className="frame-actions">
+          <button className="btn-icon" onClick={(e) => { e.stopPropagation(); navigate('/'); }} title="Home">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+          </button>
+          <button className="btn-icon" onClick={handleFlag} title="Flag NSFW">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>
+          </button>
+          <button className="btn-icon" onClick={handleFullscreen} title="Toggle Fullscreen">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+          </button>
+        </div>
+      </div>
+
       {/* Minimal Overlay Controls */}
       <div className={`frame-overlay ${showControls ? 'visible' : ''}`} onClick={e => e.stopPropagation()}>
         <div className="frame-info">
           <span className="frame-filename">{latestItem.filename}</span>
           {latestItem.is_nsfw && <span className="frame-badge">NSFW</span>}
-        </div>
-        
-        <div className="frame-actions">
-          <button className="btn-icon" onClick={handleDelete} title="Delete">🗑️</button>
-          <button className="btn-icon" onClick={handleFlag} title="Flag NSFW">⚠️</button>
         </div>
       </div>
     </div>

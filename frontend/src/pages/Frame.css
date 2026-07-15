@@ -94,6 +94,21 @@
   pointer-events: auto;
 }
 
+.frame-top-right {
+  position: absolute;
+  top: var(--space-xl);
+  right: var(--space-xl);
+  z-index: 20;
+  opacity: 0;
+  transition: opacity var(--transition-base);
+  pointer-events: none;
+}
+
+.frame-top-right.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .frame-info {
   display: flex;
   flex-direction: column;
