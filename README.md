@@ -1,317 +1,126 @@
-# Real Time - AI Photo Frame
+# Real Time - AI Photo Frame 2
 
-A modern, web-based photo frame application designed for viewing and managing AI-generated images and videos. Features a sleek glassmorphism UI with real-time updates, smart NSFW filtering, and responsive navigation.
+A modern, web-based photo frame application designed for viewing and managing AI-generated images and videos. Features a sleek glassmorphism UI with real-time updates, smart NSFW filtering, and responsive navigation. 
 
-It monitors a folder for new images and videos and updates image and video files in real-time. This allows you to use a second monitor as a photo frame or video player as you generate new images and videos.
+Powered by a modern React + Vite frontend and a blazing fast FastAPI backend with SQLite indexing.
 
-![Version](https://img.shields.io/badge/version-5.0-blue)
+![Version](https://img.shields.io/badge/version-2.0.5-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-green)
-![Flask](https://img.shields.io/badge/flask-2.3.3-lightgrey)
+![FastAPI](https://img.shields.io/badge/fastapi-0.104+-teal)
+![React](https://img.shields.io/badge/react-18-blue)
 
 ## ✨ Features
 
 ### 📸 Three Viewing Modes
-- **Home Page** - Latest image hero view with scrollable thumbnail sidebar
-- **Gallery** - Grid layout with folder navigation and live preview panel
-- **Picture Frame** - Minimalist full-screen slideshow mode
+- **Home Page** - Latest media hero view with responsive grid structure
+- **Gallery** - Dynamic reflowing grid layout with recursive folder navigation and live preview panel
+- **Picture Frame** - Minimalist full-screen slideshow mode with integrated native fullscreen support
 
 ### 🎨 Modern UI
-- Glassmorphism design with smooth animations
-- Dark theme optimized for media viewing
-- Responsive layout for all screen sizes
-- Customizable thumbnail sizes
+- Fully responsive glassmorphism design optimized for all screen sizes (Mobile, Tablet, Desktop)
+- Dynamic thumbnail aspect ratio toggling (`Square` or `Original`)
+- Illuminated Pill-Style toggles for application states
+- Monotone SVG Iconography for a clean, sleek look
 
 ### 🔍 Smart Features
-- **Real-time Monitoring** - Auto-detects new images via file system watcher
-- **AI Content Scan** - Automatic NSFW detection using NudeNet AI (configurable sensitivity)
-- **NSFW Filtering** - Keyword and folder-based safe mode with passphrase lock option
-- **Authentication** - Optional passphrase login with user/admin roles
-- **Media Type Filters** - Toggle between photos, videos, or all
-- **Recursive Folder Navigation** - Browse nested folder structures
-- **Metadata Extraction** - Displays AI generation parameters including prompts, seed, model, and LoRAs used
-- **Search Functionality** - Search by filename, prompt, or model
-- **Infinite Scroll** - Smooth loading for large libraries
-- **Delete & Flag NSFW** - Remove or flag unwanted images directly from the interface
+- **Real-time Monitoring** - Auto-detects new images via file system watcher with WebSocket broadcasts
+- **AI Content Scan** - Automatic NSFW detection using NudeNet AI with configurable offsets and progress UI
+- **Dynamic Content Badges** - Visual indicators for NSFW (Red), Safe Mode Filtered (Yellow), and explicitly SAFE (Green) media
+- **Metadata Extraction** - Permanent & quick metadata viewers displaying generation parameters (Prompts, Seed, Model, LoRAs). Includes instant Copy-to-Clipboard.
+- **Manual Safe Mode Exclusions** - Easily whitelist safe files by moving them into a designated `/SAFE` directory
+- **Granular Settings** - Save UI settings, default values, and backend configurations entirely through the GUI
 
-### ⌨️ Keyboard Controls
-- **Arrow Keys** - Navigate between images
-- **Escape** - Close preview panels
-- **Full keyboard navigation** on all pages
+### 🎬 Advanced Video Player
+- Plays MP4, WebM, MOV, AVI, MKV formats
+- **Frame-by-Frame Navigation** - First, Previous, Next, Last frame controls for precision scrubbing
+- **Frame Capture (📸)** - Export the exact current frame to a high-quality JPG via the backend API
+- Mobile-responsive video controls with independent draggable scrubber
+- Fullscreen and responsive `object-fit: contain` scaling
 
-### 🎬 Video Support
-- Plays MP4, WebM, MOV, AVI, MKV, and M4V formats
-- **Custom video controls** with auto-hide (no native browser overlays)
-- **Frame navigation** - First frame, step back/forward, last frame buttons
-- **Save frame** - Capture current frame as JPEG image
-- **Native fullscreen** - Fullscreen video with browser's native player
-- Seekable progress bar with time display
-- Mobile-responsive layout with larger touch targets
-- Auto-play with loop
-
-📋 See [CHANGELOG.md](CHANGELOG.md) for recent updates and fixes.
+📋 See [CHANGELOG.md](CHANGELOG.md) for detailed updates and version history.
 
 ## 📋 Requirements
 
 - Python 3.8 or higher
+- Node.js 18+ (for frontend compilation)
 - Modern web browser (Chrome, Firefox, Edge, Safari)
 - Windows, macOS, or Linux
 
-## 🚀 Installation - Tested on Windows 11
+## 🚀 Installation
 
 ### 1. Clone or Download
 ```bash
 git clone https://github.com/MrKuenning/AI-Photo-Frame
 ```
 
-### 2. Install Dependencies
+### 2. Install Backend Dependencies
 ```bash
+cd backend
 pip install -r requirements.txt
 ```
 
-**Dependencies:**
-- Flask 2.3.3
-- watchdog 3.0.0
-- Pillow 10.0.0
-- python-magic 0.4.27
-- python-magic-bin 0.4.14
-- flask-paginate 2023.10.8
-- flask-socketio 5.3.6
-- itsdangerous 2.1.0+ (for session management)
-- NudeNet 3.0.0+ (optional, for AI content scanning)
+### 3. Install Frontend Dependencies & Build
+```bash
+cd frontend
+npm install
+npm run build
+```
+*(On Windows, you can simply run the included `Frontend - Compile.bat` file from the root directory).*
 
-### 3. Configure
-Edit `config.ini` to set your image folder path:
-
+### 4. Configure
+Edit `backend/config.ini` (or copy `config-example.ini` if starting fresh) to set your monitored folder:
 ```ini
 [App]
-# Path to the main image folder to monitor
 IMAGE_FOLDER = E:\AI\Output
+PORT = 5002
 ```
 
-See [Configuration](#-configuration) section for all options.
-
-### 4. Run
-```bash
-python Image_Viewer.py
-```
-
-Or use the included batch file:
+### 5. Run Server
+Run the included batch file from the root directory:
 ```bash
 Start Server.bat
 ```
+*(Or manually run `python main.py` inside the `backend/` directory).*
 
-### 5. Open Browser
+### 6. Open Browser
 Navigate to: `http://localhost:5002`
-
-## ⚙️ Configuration
-
-The `config.ini` file allows you to customize the application:
-
-### Global Settings
-```ini
-# Main folder to monitor (can contain subfolders)
-IMAGE_FOLDER = E:\AI\Output
-
-# Initial load limit for performance
-MAX_INITIAL_LOAD = 100
-```
-
-### NSFW Filtering
-```ini
-# Keywords to identify NSFW content (comma-separated)
-NSFW_KEYWORDS = adult, nsfw, bikini, ...
-
-# Folders containing NSFW content (comma-separated)
-NSFW_FOLDERS = NSFW, VIDEO, FAMILY
-```
-
-### Display Settings
-```ini
-# Thumbnail size for home page
-HOME_THUMBNAIL_SIZE = 200x200
-
-# Thumbnail size for gallery
-GALLERY_THUMBNAIL_SIZE = 200x200
-
-# Preview size for gallery hero view
-GALLERY_PREVIEW_SIZE = 800x800
-```
-
-### Authentication (Optional)
-```ini
-# Enable login requirement
-AUTH_ENABLED = false
-
-# User passphrase - can access UI but restricted from delete/flag if admin pass is set
-USER_PASSPHRASE = 
-
-# Admin passphrase - full access including delete/flag
-ADMIN_PASSPHRASE = 
-
-# Require passphrase to disable Safe Mode
-SAFEMODE_LOCK_ENABLED = false
-SAFEMODE_PASSPHRASE = 
-```
-
-**Permission Matrix:**
-| Role | Delete/Flag | Safe Mode Toggle |
-|------|-------------|-----------------|
-| No Auth | ✅ | ✅ |
-| User (with admin pass set) | ❌ | 🔐 Needs passphrase |
-| Admin | ✅ | ✅ |
 
 ## 📂 Project Structure
 
-```
-AI - Photo Frame 5/App1/
-├── Image_Viewer.py          # Main Flask application
-├── config.ini               # Configuration file
-├── requirements.txt         # Python dependencies
-├── Start Server.bat         # Quick start script
+```text
+App1 - Photo Frame 6/
+├── Start Server.bat         # Production backend startup script
+├── Frontend - Compile.bat   # Production frontend build script
+├── CHANGELOG.md             # Detailed version history
 │
-├── templates/               # HTML templates
-│   ├── base.html           # Base template with header/navigation
-│   ├── index.html          # Home page
-│   ├── gallery.html        # Gallery view
-│   └── frame.html          # Picture frame mode
+├── backend/                 # FastAPI Server Logic
+│   ├── main.py              # Application entry point
+│   ├── config.py            # Configuration management
+│   ├── database.py          # SQLite database and indexing
+│   ├── watcher.py           # File system monitoring
+│   ├── content_scanner.py   # AI NudeNet content scanning
+│   ├── metadata_extractor.py# Metadata reading (A1111/WanGP)
+│   ├── requirements.txt     # Python dependencies
+│   └── routers/             # API routing endpoints
 │
-└── static/                 # Static assets
-    ├── css/
-    │   └── style.css       # Main stylesheet
-    └── js/
-        ├── gallery.js              # Gallery page logic
-        ├── index_navigation.js     # Home page navigation
-        ├── hero_metadata.js        # Metadata loading
-        ├── live_update.js          # Real-time updates
-        ├── infinite-scroll.js      # Infinite scroll
-        ├── media_filter.js         # Media type filtering
-        ├── display_mode_toggle.js  # Safe mode toggle
-        └── ... (other utilities)
+└── frontend/                # React + Vite UI
+    ├── package.json         # Node dependencies
+    ├── vite.config.js       # Vite configuration with backend proxying
+    └── src/
+        ├── components/      # Modular React UI components
+        ├── pages/           # Main application views (Home, Gallery, Frame)
+        ├── hooks/           # Custom React hooks (WebSockets, API)
+        └── assets/          # Static styles and SVG icons
 ```
 
-## 🎯 Usage
+## 🔧 Filename Format & Metadata
 
+The application extracts metadata directly from embedded file EXIF/PNG chunks, or gracefully falls back to filenames formatted as:
+`YYYY-MM-DD.HH-MM-SS - seed - dimensions - model - prompt.extension`
 
-### Home Page
-- View the latest image in large hero view
-- Scroll through thumbnails in the sidebar
-- Click thumbnails to view in hero
-- Use **Previous/Next** buttons or **arrow keys** to navigate
-- Toggle **Safe Mode** in the header to filter NSFW content
-- Filter by **Photos** or **Videos** using media type buttons
-![2025-12-12 00_36_48-](https://github.com/user-attachments/assets/d3fff599-33b1-4330-94cd-2ef67f87129f)
+## 🛡️ Safe Mode & Privacy
 
-### Gallery
-- Browse images in a responsive grid layout
-- Click any image to open in preview panel
-- Navigate with **Previous/Next** buttons
-- Use folder breadcrumbs to navigate directory structure
-- Search by filename, prompt, or model name
-- Adjust thumbnail size with the slider
-- **Delete** images directly from the preview panel
-![2025-12-12 00_37_28-Greenshot](https://github.com/user-attachments/assets/b00bf89a-1592-4bf0-8fab-0618433da24a)
-
-### Picture Frame Mode
-
-- Minimalist full-screen view
-- Auto-updates when new images arrive
-- Perfect for dedicated display setups
-- Click **Go to Home** to return to main view
-- Full-Screen button for mobile devices
-![2025-12-12 00_37_41-Greenshot](https://github.com/user-attachments/assets/85786205-0f39-4d46-839c-3c9e2f0f0ef8)
-
-
-## 🔧 Filename Format
-
-The application extracts metadata from AI-generated image filenames in this format:
-
-```
-YYYY-MM-DD.HH-MM-SS - seed - dimensions - model - prompt.extension
-```
-
-**Example:**
-```
-2025-12-12.14-30-45 - 123456 - 1024x1024 - stable-diffusion-xl - a beautiful sunset over mountains.jpg
-```
-
-**Extracted metadata:**
-- Date/Time: `2025-12-12.14-30-45`
-- Seed: `123456`
-- Dimensions: `1024x1024`
-- Model: `stable-diffusion-xl`
-- Prompt: `a beautiful sunset over mountains`
-
-## 🛡️ Safe Mode
-
-The application includes a built-in NSFW filter:
-
-1. **Toggle Safe Mode** via the switch in the header
-2. Images/videos are filtered based on:
-   - Keywords in the prompt (configured in `config.ini`)
-   - Folder names (configured in `config.ini`)
-3. Filtered content is hidden from all views
-4. Setting persists in browser cookies
-
-## 🐛 Troubleshooting
-
-### Server won't start
-- Check Python version: `python --version` (needs 3.8+)
-- Verify all dependencies installed: `pip install -r requirements.txt`
-- Check if port 5002 is already in use
-
-### Images not appearing
-- Verify `IMAGE_FOLDER` path in `config.ini` is correct
-- Check folder permissions
-- Ensure images are in supported formats (JPG, PNG, GIF, BMP, WebP)
-
-### Real-time updates not working
-- Check browser console for WebSocket errors
-- Ensure Flask-SocketIO is installed
-- Try refreshing the browser
-
-### High memory usage with large libraries
-- Reduce `MAX_INITIAL_LOAD` in `config.ini`
-- Clear browser cache
-- Close unused tabs
-
-## 🎨 Customization
-
-### Changing Colors
-Edit `static/css/style.css` and modify CSS variables:
-
-```css
-:root {
-    --color-primary: #6366f1;
-    --color-background: #0f172a;
-    --color-surface: #1e293b;
-    /* ... */
-}
-```
-
-### Adjusting Layout
-- Thumbnail sizes: Adjust sliders in the UI or change defaults in `config.ini`
-- Grid columns: Modify CSS grid settings in `style.css`
-- Spacing: Update CSS spacing variables
-
-## 🤝 Contributing
-
-Contributions are welcome! Feel free to:
-- Report bugs
-- Suggest features
-- Submit pull requests
-- Improve documentation
-
-## 📝 License
-
-This project is provided as-is for personal use.
-
-## 🙏 Acknowledgments
-
-- Built with Flask web framework
-- UI inspired by modern design trends
-- Bootstrap Icons for iconography
-- Watchdog library for file system monitoring
-
----
-
-**Enjoy your AI Photo Frame! 📸✨**
+1. **Safe Mode Toggle**: Filters images/videos based on restricted keywords and explicitly named NSFW folders.
+2. **Content Scanner**: Passively monitors incoming files. If enabled, flagged content is physically moved to an `NSFW` subfolder.
+3. **SAFE Whitelisting**: Use the Shield/Safe button to permanently flag an image as safe, moving it to a `SAFE` folder where it bypasses future scans.
+4. **Passphrase Locks**: Lock specific toggles (like Content Scan or Safe Mode) via the Global Settings to prevent unauthorized changes.
