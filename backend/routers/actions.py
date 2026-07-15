@@ -83,9 +83,16 @@ def flag_nsfw(media_id: int, request: Request):
 
     new_path = content_scanner.move_to_nsfw_folder(file_path)
     if new_path:
-        # Update DB — remove old, the watcher will pick up the new location
-        db.delete_media(file_path)
-        print(f"🟥 [FLAG] Moved to NSFW: {item['filename']}")
+        # Update DB to keep the same ID
+        db.update_media_path(
+            old_path=file_path, 
+            new_path=new_path, 
+            filename=os.path.basename(new_path), 
+            subfolder='NSFW', 
+            is_nsfw=True, 
+            is_content_locked=True
+        )
+        print(f"🟥 [FLAG] Moved to NSFW: {item['filename']}\n")
         return {"success": True, "message": "File moved to NSFW folder", "new_path": new_path}
     else:
         raise HTTPException(status_code=500, detail="Failed to move file")
@@ -120,8 +127,22 @@ def unflag_nsfw(media_id: int, request: Request):
                 counter += 1
 
         shutil.move(file_path, dest_path)
-        db.delete_media(file_path)
-        print(f"🟩 [UNFLAG] Moved out of NSFW: {file_name}")
+        
+        # Determine new subfolder
+        new_subfolder = os.path.basename(parent_folder) if parent_folder != settings.get('IMAGE_FOLDER') else ''
+        if new_subfolder == os.path.basename(settings.get('IMAGE_FOLDER')):
+            new_subfolder = ''
+            
+        db.update_media_path(
+            old_path=file_path,
+            new_path=dest_path,
+            filename=file_name,
+            subfolder=new_subfolder,
+            is_nsfw=False,
+            is_content_locked=False
+        )
+        
+        print(f"🟩 [UNFLAG] Moved out of NSFW: {file_name}\n")
         return {"success": True, "message": "File unflagged", "new_path": dest_path}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -147,11 +168,68 @@ def mark_safe(media_id: int, request: Request):
 
     new_path = content_scanner.move_to_safe_folder(file_path)
     if new_path:
-        db.delete_media(file_path)
-        print(f"🟩 [SAFE] Moved to SAFE: {item['filename']}")
-        return {"success": True, "message": "File moved to SAFE folder", "new_path": new_path}
+        db.update_media_path(
+            old_path=file_path,
+            new_path=new_path,
+            filename=os.path.basename(new_path),
+            subfolder='SAFE',
+            is_nsfw=False,
+            is_content_locked=False
+        )
+        print(f"🟩 [MARK SAFE] Moved to SAFE: {item['filename']}\n")
+        return {"success": True, "message": "File marked safe", "new_path": new_path}
     else:
         raise HTTPException(status_code=500, detail="Failed to move file")
+
+@router.post("/unmark-safe/{media_id}")
+def unmark_safe(media_id: int, request: Request):
+    """Move a file out of SAFE subfolder back to parent"""
+    if not has_action_permission(request, 'flag'):
+        raise HTTPException(status_code=403, detail="Permission denied")
+
+    item = db.get_by_id(media_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Media not found")
+
+    file_path = item['file_path']
+    if not content_scanner.is_in_safe_folder(file_path):
+        return JSONResponse({"success": False, "error": "File is not in SAFE folder"}, status_code=400)
+
+    try:
+        current_folder = os.path.dirname(file_path)
+        parent_folder = os.path.dirname(current_folder)
+        file_name = os.path.basename(file_path)
+        dest_path = os.path.join(parent_folder, file_name)
+
+        # Handle collision
+        if os.path.exists(dest_path):
+            base, ext = os.path.splitext(file_name)
+            counter = 1
+            while os.path.exists(dest_path):
+                dest_path = os.path.join(parent_folder, f"{base}_{counter}{ext}")
+                counter += 1
+
+        import shutil
+        shutil.move(file_path, dest_path)
+        
+        # Determine new subfolder
+        new_subfolder = os.path.basename(parent_folder) if parent_folder != settings.get('IMAGE_FOLDER') else ''
+        if new_subfolder == os.path.basename(settings.get('IMAGE_FOLDER')):
+            new_subfolder = ''
+            
+        db.update_media_path(
+            old_path=file_path,
+            new_path=dest_path,
+            filename=file_name,
+            subfolder=new_subfolder,
+            is_nsfw=item['is_nsfw'],
+            is_content_locked=item['is_content_locked']
+        )
+        
+        print(f"🟥 [UNMARK SAFE] Moved out of SAFE: {file_name}\n")
+        return {"success": True, "message": "File unmarked safe", "new_path": dest_path}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ============================================
@@ -314,13 +392,24 @@ def scan_folder(body: ScanFolderRequest, request: Request):
 
     def run_scan():
         from metadata_extractor import extract_embedded_metadata
+        from main import ws_manager
+        
+        # ANSI colors for console output
+        C_CYAN = "\033[96m"
+        C_RESET = "\033[0m"
+        folder_name = os.path.basename(folder_path) if folder_path != image_folder else 'All'
+        print(f"\n{C_CYAN}[Manual Scan Started on {folder_name}]{C_RESET}")
+        
         skip_archive = not body.subfolder
         for progress in content_scanner.scan_folder_batch(
             folder_path, batch_size=20,
             get_metadata_func=lambda fp: extract_embedded_metadata(fp),
             skip_archive=skip_archive
         ):
-            pass  # Progress could be pushed via WebSocket in future
+            ws_manager.broadcast_sync({
+                "type": "scan_progress",
+                "data": progress
+            })
         print(f"[Scan] Complete for {body.subfolder or 'All'}")
 
     threading.Thread(target=run_scan, daemon=True).start()

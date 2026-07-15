@@ -30,6 +30,39 @@
   display: none;
 }
 
+.app-status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-family: monospace;
+  margin-left: 2px;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  transition: background-color var(--transition-base);
+}
+
+.status-dot.online {
+  background-color: var(--success);
+  box-shadow: 0 0 6px var(--success);
+}
+
+.status-dot.offline {
+  background-color: var(--error);
+  box-shadow: 0 0 6px var(--error);
+}
+
+.build-version {
+  margin-left: 4px;
+  opacity: 0.6;
+}
+
 .mobile-nav {
   display: none !important;
 }

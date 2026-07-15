@@ -11,6 +11,14 @@ import time
 import tempfile
 from typing import Optional, Generator, List, Dict, Any
 
+# ANSI Colors
+C_CYAN = "\033[96m"
+C_GREEN = "\033[92m"
+C_YELLOW = "\033[93m"
+C_RED = "\033[91m"
+C_GRAY = "\033[90m"
+C_RESET = "\033[0m"
+
 # NudeNet detector (lazy loaded to avoid startup delay)
 _detector = None
 _detector_lock = threading.Lock()
@@ -124,7 +132,7 @@ def check_nsfw_keywords(metadata: Dict[str, Any]) -> bool:
     prompt = metadata.get('prompt', '').lower()
     for keyword in NSFW_KEYWORDS:
         if keyword in prompt:
-            print(f"[ContentScanner] 🔍 Keyword match: '{keyword}' in prompt")
+            print(f"🔞 {C_RED}NSFW FLAGGED:{C_RESET} Based on matching keyword: {keyword}")
             return True
     
     return False
@@ -189,7 +197,7 @@ def check_video_nudity(file_path: str) -> bool:
             for detection in results:
                 label = detection.get('class', '')
                 confidence = detection.get('score', 0)
-                print(f"    └─ {label}: {confidence:.1%}")
+                print(f"    └─ {C_GRAY}{label}:{C_RESET} {confidence:.1%}")
         
         # Check for NSFW content
         for detection in results:
@@ -197,7 +205,7 @@ def check_video_nudity(file_path: str) -> bool:
             confidence = detection.get('score', 0)
             
             if label in NSFW_LABELS and confidence >= NUDITY_THRESHOLD:
-                print(f"[ContentScanner] 🔞 NSFW FLAGGED: {label} ({confidence:.1%}) >= threshold ({NUDITY_THRESHOLD:.0%})")
+                print(f"🔞 {C_RED}NSFW FLAGGED:{C_RESET} {label} ({confidence:.1%}) >= threshold ({NUDITY_THRESHOLD:.0%})")
                 return True
         
         return False
@@ -265,13 +273,10 @@ def check_nudity_detection(file_path: str) -> bool:
         
         # Log all detections found
         if results:
-            print(f"[ContentScanner] 🔍 Scanning: {filename}")
             for detection in results:
                 label = detection.get('class', '')
                 confidence = detection.get('score', 0)
-                print(f"    └─ {label}: {confidence:.1%}")
-        else:
-            print(f"[ContentScanner] ✅ No detections: {filename}")
+                print(f"    └─ {C_GRAY}{label}:{C_RESET} {confidence:.1%}")
         
         # Check for NSFW content
         for detection in results:
@@ -279,7 +284,7 @@ def check_nudity_detection(file_path: str) -> bool:
             confidence = detection.get('score', 0)
             
             if label in NSFW_LABELS and confidence >= NUDITY_THRESHOLD:
-                print(f"[ContentScanner] 🔞 NSFW FLAGGED: {label} ({confidence:.1%}) >= threshold ({NUDITY_THRESHOLD:.0%})")
+                print(f"🔞 {C_RED}NSFW FLAGGED:{C_RESET} {label} ({confidence:.1%}) >= threshold ({NUDITY_THRESHOLD:.0%})")
                 return True
                 
         return False
@@ -303,6 +308,9 @@ def scan_media_content(file_path: str, metadata: Optional[Dict[str, Any]] = None
     Returns:
         True if NSFW content detected, False otherwise
     """
+    filename = os.path.basename(file_path)
+    print(f"🔍 {C_CYAN}Scanning:{C_RESET} {filename}")
+
     # First check keywords (fast)
     if metadata and check_nsfw_keywords(metadata):
         return True
@@ -311,6 +319,7 @@ def scan_media_content(file_path: str, metadata: Optional[Dict[str, Any]] = None
     if check_nudity_detection(file_path):
         return True
     
+    print(f"✅ {C_GREEN}NSFW Cleared{C_RESET}\n")
     return False
 
 
@@ -325,7 +334,6 @@ def move_to_nsfw_folder(file_path: str) -> Optional[str]:
         New file path if moved, None if failed
     """
     if not os.path.exists(file_path):
-        print(f"[ContentScanner] ❌ File not found: {file_path}")
         return None
     
     # Get parent folder and filename
@@ -356,7 +364,7 @@ def move_to_nsfw_folder(file_path: str) -> Optional[str]:
     
     try:
         shutil.move(file_path, dest_path)
-        print(f"[ContentScanner] 📁 Moved to NSFW folder: {filename}")
+        print(f"📁 Moved to NSFW folder\n")
         return dest_path
     except Exception as e:
         print(f"[ContentScanner] ❌ Error moving file: {e}")
@@ -433,7 +441,7 @@ def move_to_safe_folder(file_path: str) -> Optional[str]:
     
     try:
         shutil.move(file_path, dest_path)
-        print(f"[ContentScanner] ✅ Moved to SAFE folder: {filename}")
+        print(f"📁 Moved to SAFE folder\n")
         return dest_path
     except Exception as e:
         print(f"[ContentScanner] ❌ Error moving file: {e}")
@@ -548,6 +556,8 @@ def scan_single_file(file_path: str, metadata: Optional[Dict[str, Any]] = None) 
     # Skip if already in NSFW folder or in SAFE folder
     if should_skip_scanning(file_path):
         return False
+        
+    print(f"\n{C_CYAN}[ContentScanner]{C_RESET}")
     
     # Scan content
     if scan_media_content(file_path, metadata):

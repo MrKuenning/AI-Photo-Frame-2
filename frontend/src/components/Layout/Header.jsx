@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useToggles } from '../../hooks/useToggles';
 import { useMediaFilter } from '../../hooks/useMediaFilter';
+import { useWebSocket } from '../../hooks/useWebSocket';
 import SettingsModal from '../SettingsModal/SettingsModal';
 import PassphraseModal from '../PassphraseModal/PassphraseModal';
 import './Header.css';
@@ -11,6 +12,7 @@ export default function Header({ currentPath }) {
   const { authStatus } = useAuth();
   const toggles = useToggles();
   const { filterType, setFilterType, triggerRefresh } = useMediaFilter();
+  const { isConnected } = useWebSocket();
   
   const [menuOpen, setMenuOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -40,9 +42,16 @@ export default function Header({ currentPath }) {
     <>
       <header className="header glass">
         <div className="header-left">
-          <div className="logo">
-            <span className="logo-full">Photo Frame 6</span>
-            <span className="logo-icon">PF6</span>
+          <div className="logo" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <div>
+              <span className="logo-full">Photo Frame 2</span>
+              <span className="logo-icon">PF2</span>
+            </div>
+            <div className="app-status-indicator">
+              <div className={`status-dot ${isConnected ? 'online' : 'offline'}`}></div>
+              <span>{isConnected ? 'Live' : 'Connecting...'}</span>
+              <span className="build-version">v{__APP_VERSION__}</span>
+            </div>
           </div>
           <nav className="main-nav desktop-nav">
             <NavLink to="/" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
@@ -121,6 +130,20 @@ export default function Header({ currentPath }) {
             >
               Content Scan
             </button>
+            
+            {currentPath === '/gallery' && (
+              <button 
+                className="btn-pill-toggle"
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent('scan-folder-request'));
+                  setMenuOpen(false);
+                }}
+                title="Scan current folder for NSFW content"
+                style={{ color: 'var(--primary)', borderColor: 'var(--primary)' }}
+              >
+                Scan Folder
+              </button>
+            )}
           </div>
           
           <div className="header-actions">

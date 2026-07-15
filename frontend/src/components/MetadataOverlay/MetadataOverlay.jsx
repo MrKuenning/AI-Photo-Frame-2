@@ -91,24 +91,29 @@ const MetadataContent = ({ metadata, item, loading }) => {
 export default function MetadataOverlay({ item, showBottomPane }) {
   const [isOpen, setIsOpen] = useState(false);
   const [metadata, setMetadata] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(showBottomPane); // Start loading immediately if bottom pane is open
+  const [lastFetchedId, setLastFetchedId] = useState(null);
+
+  // If item changes, clear metadata immediately during render to prevent showing old data
+  if (item && item.id !== lastFetchedId && metadata !== null) {
+    setMetadata(null);
+    setIsOpen(false);
+    if (showBottomPane) setLoading(true);
+  }
 
   useEffect(() => {
-    // Fetch if either view is open
-    if ((isOpen || showBottomPane) && item && !metadata) {
+    // Fetch if either view is open and we haven't fetched this item yet
+    if ((isOpen || showBottomPane) && item && item.id !== lastFetchedId) {
       setLoading(true);
       fetchMetadata(item.id)
-        .then(setMetadata)
+        .then(data => {
+          setMetadata(data);
+          setLastFetchedId(item.id);
+        })
         .catch(console.error)
         .finally(() => setLoading(false));
     }
-  }, [isOpen, showBottomPane, item, metadata]);
-
-  // Reset when item changes
-  useEffect(() => {
-    setMetadata(null);
-    setIsOpen(false);
-  }, [item]);
+  }, [isOpen, showBottomPane, item, lastFetchedId]);
 
   if (!item) return null;
 

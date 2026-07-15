@@ -86,27 +86,18 @@ export function useMediaList(initialFilters = {}) {
 
   // Prepend a new item (e.g. from WebSocket)
   const prependItem = useCallback((newItem) => {
-    // Quick filter check for subfolder
-    if (filters.subfolder && !newItem.subfolder.startsWith(filters.subfolder)) {
-      return;
-    }
-    // Filter check for media type
-    if (filters.media_type && filters.media_type !== 'all' && 
-        ((filters.media_type === 'photos' && newItem.media_type !== 'image') ||
-         (filters.media_type === 'videos' && newItem.media_type !== 'video'))) {
-      return;
-    }
+    if (!newItem) return;
     
-    // Convert ws payload to format matching API
-    const item = {
-      id: Date.now(), // Temporary ID until we reload
-      filename: newItem.filename,
-      subfolder: newItem.subfolder,
-      media_type: newItem.media_type || 'image',
-      file_path: newItem.subfolder ? `${newItem.subfolder}/${newItem.filename}` : newItem.filename
-    };
+    // Only prepend if it matches the current filters (e.g. subfolder)
+    if (filters.subfolder && newItem.subfolder !== filters.subfolder) return;
+    if (filters.media_type && filters.media_type !== 'all' && newItem.media_type !== filters.media_type) return;
 
-    setItems(prev => [item, ...prev]);
+    // We now receive the full item from the database via WebSocket, including its real ID!
+    setItems(prev => {
+      // Prevent duplicates if already inserted
+      if (prev.find(i => i.id === newItem.id)) return prev;
+      return [newItem, ...prev];
+    });
     setTotal(t => t + 1);
     offsetRef.current += 1;
   }, [filters]);
@@ -115,6 +106,19 @@ export function useMediaList(initialFilters = {}) {
   const removeItem = useCallback((id) => {
     setItems(prev => prev.filter(item => item.id !== id));
     setTotal(t => t - 1);
+  }, []);
+
+  const removeItemByFilename = useCallback((filename) => {
+    setItems(prev => {
+      const filtered = prev.filter(item => item.filename !== filename);
+      if (filtered.length !== prev.length) setTotal(t => Math.max(0, t - 1));
+      return filtered;
+    });
+  }, []);
+
+  // Update a single item in place
+  const updateItem = useCallback((id, updates) => {
+    setItems(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item));
   }, []);
 
   return {
@@ -129,6 +133,8 @@ export function useMediaList(initialFilters = {}) {
     loadMore,
     prependItem,
     removeItem,
+    removeItemByFilename,
+    updateItem,
     refresh: () => loadPage(true)
   };
 }

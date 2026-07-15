@@ -144,21 +144,6 @@
   background: var(--surface-hover);
 }
 
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-}
-
-.status-dot.online {
-  background-color: var(--success);
-  box-shadow: 0 0 8px var(--success);
-}
-
-.status-dot.offline {
-  background-color: var(--danger);
-}
-
 .main-content {
   flex-grow: 1;
   height: 100%;
@@ -248,7 +233,7 @@
   
   .sidebar {
     width: 100%;
-    height: 30%;
+    height: 22vh;
     border-right: none;
     border-bottom: 1px solid var(--glass-border);
   }
@@ -262,15 +247,28 @@
   }
   
   .hero-controls {
-    padding: var(--space-sm);
-    gap: var(--space-sm);
-  }
-  
-  .center-actions {
+    padding: var(--space-xs) var(--space-sm);
     gap: var(--space-xs);
   }
   
+  .center-actions {
+    gap: 4px;
+  }
+  
   .toggle-btn {
-    font-size: 1.2rem;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+  }
+  
+  .toggle-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .hero-controls .btn-primary {
+    padding: 6px 8px;
+    font-size: 0.85rem;
+    white-space: nowrap;
   }
 }

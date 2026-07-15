@@ -69,6 +69,11 @@
   flex-direction: column;
 }
 
+.viewer-section.expanded {
+  width: 100%;
+  border-left: none;
+}
+
 .close-viewer-btn {
   position: absolute;
   top: var(--space-md);

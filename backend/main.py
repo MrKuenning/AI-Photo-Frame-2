@@ -178,7 +178,7 @@ async def lifespan(app: FastAPI):
                         from metadata_extractor import extract_embedded_metadata
                         metadata = extract_embedded_metadata(file_path)
                         if content_scanner.scan_single_file(file_path, metadata):
-                            print(f"[ContentScan] 📁 File moved to NSFW folder")
+                            pass
                     except Exception as e:
                         print(f"[ContentScan] Error: {e}")
 

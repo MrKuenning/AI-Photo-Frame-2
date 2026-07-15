@@ -170,6 +170,21 @@ def update_metadata(
     conn.commit()
 
 
+def update_media_path(old_path: str, new_path: str, filename: str, subfolder: str, is_nsfw: bool = False, is_content_locked: bool = False):
+    """Update file path and location info without changing ID"""
+    conn = _get_connection()
+    conn.execute("""
+        UPDATE media SET
+            file_path = ?,
+            filename = ?,
+            subfolder = ?,
+            is_nsfw = ?,
+            is_content_locked = ?
+        WHERE file_path = ?
+    """, (new_path, filename, subfolder, int(is_nsfw), int(is_content_locked), old_path))
+    conn.commit()
+
+
 def delete_media(file_path: str):
     """Remove a media record from the database"""
     conn = _get_connection()

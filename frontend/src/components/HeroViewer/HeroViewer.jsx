@@ -15,7 +15,7 @@ export default function HeroViewer({ item, onNext, onPrev, onClose }) {
     if (containerRef.current) {
       containerRef.current.focus();
     }
-  }, [item]);
+  }, [item?.id]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {

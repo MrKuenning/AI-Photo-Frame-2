@@ -3,13 +3,8 @@
  * Centralizes all API calls with consistent error handling.
  */
 
-const API_BASE = import.meta.env.DEV
-  ? `http://${window.location.hostname}:5000/api`
-  : '/api';
-
-const WS_BASE = import.meta.env.DEV
-  ? `ws://${window.location.hostname}:5000/ws`
-  : `ws://${window.location.host}/ws`;
+const API_BASE = '/api';
+const WS_BASE = `ws://${window.location.host}/ws`;
 
 async function request(path, options = {}) {
   const url = `${API_BASE}${path}`;
@@ -118,6 +113,10 @@ export function markSafe(mediaId) {
   return request(`/actions/mark-safe/${mediaId}`, { method: 'POST' });
 }
 
+export function unmarkSafe(mediaId) {
+  return request(`/actions/unmark-safe/${mediaId}`, { method: 'POST' });
+}
+
 export function saveFrame(mediaId, imageData) {
   return request('/actions/save-frame', {
     method: 'POST',
@@ -125,7 +124,7 @@ export function saveFrame(mediaId, imageData) {
   });
 }
 
-export function archiveAll() {
+export function archiveMedia() {
   return request('/actions/archive', { method: 'POST' });
 }
 

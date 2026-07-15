@@ -8,12 +8,39 @@
 .breadcrumbs {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   flex-wrap: wrap;
-  gap: var(--space-xs);
+  width: 100%;
+  gap: var(--space-md);
   padding: var(--space-sm) var(--space-md);
   background: var(--bg-surface);
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-color);
+}
+
+.breadcrumb-path {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.breadcrumb-actions {
+  display: flex;
+  gap: var(--space-md);
+  align-items: center;
+  flex-wrap: wrap;
+  flex-grow: 1;
+}
+
+@media (max-width: 768px) {
+  .breadcrumbs {
+    gap: var(--space-sm);
+  }
+  
+  .breadcrumb-actions {
+    width: 100%;
+  }
 }
 
 .crumb-btn {
@@ -47,6 +74,19 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-sm);
+}
+
+@media (max-width: 768px) {
+  .folder-list {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 8px; /* space for scrollbar */
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Hide scrollbar Firefox */
+  }
+  .folder-list::-webkit-scrollbar {
+    display: none; /* Hide scrollbar Chrome/Safari */
+  }
 }
 
 .folder-item {

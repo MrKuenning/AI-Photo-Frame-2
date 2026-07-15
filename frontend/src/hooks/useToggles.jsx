@@ -47,8 +47,8 @@ export function TogglesProvider({ children }) {
 
       setSafeMode(initToggle('safeMode', authStatus.safe_mode_default));
       setContentLock(initToggle('contentLock', authStatus.content_lock_default));
-      setHomeThumbnailColumns(initInt('homeThumbnailColumns', authStatus.home_thumbnail_columns_default || 3));
-      setGalleryThumbnailSize(initInt('galleryThumbnailSize', authStatus.gallery_thumbnail_size_default || 3));
+      setHomeThumbnailColumns(initInt('homeThumbnailColumns', authStatus.home_thumbnail_columns_default || (window.innerWidth <= 768 ? 4 : 3)));
+      setGalleryThumbnailSize(initInt('galleryThumbnailSize', authStatus.gallery_thumbnail_size_default || (window.innerWidth <= 768 ? 6 : 3)));
       setThumbnailAspectRatio(initString('thumbnailAspectRatio', authStatus.thumbnail_aspect_ratio_default || 'square'));
     }
   }, [authStatus]);

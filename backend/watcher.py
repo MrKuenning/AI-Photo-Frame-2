@@ -73,12 +73,14 @@ def _classify_file(file_path: str) -> dict:
 
     # Check keyword-based NSFW (from filename)
     is_nsfw = False
-    nsfw_keywords = settings.get('NSFW_KEYWORDS', [])
-    filename_lower = filename.lower()
-    for keyword in nsfw_keywords:
-        if keyword in filename_lower:
-            is_nsfw = True
-            break
+    is_safe = 'safe' in path_parts
+    if not is_safe:
+        nsfw_keywords = settings.get('NSFW_KEYWORDS', [])
+        filename_lower = filename.lower()
+        for keyword in nsfw_keywords:
+            if keyword in filename_lower:
+                is_nsfw = True
+                break
 
     try:
         mod_time = os.path.getmtime(file_path)
@@ -118,20 +120,32 @@ def _process_new_file(file_path: str, event_type: str = 'new_image'):
 
     # Push WebSocket event to all clients
     if _ws_broadcast:
-        _ws_broadcast({
-            'type': event_type,
-            'filename': info['filename'],
-            'subfolder': info['subfolder'],
-            'media_type': info['media_type'],
-        })
+        # Fetch full item from db to broadcast
+        db_item = db.get_by_path(info['file_path'])
+        if db_item:
+            _ws_broadcast({
+                'type': event_type,
+                'data': db_item
+            })
 
     # Trigger content scan in background if enabled
     if _content_scan_callback:
-        threading.Thread(
-            target=_content_scan_callback,
-            args=(file_path,),
-            daemon=True
-        ).start()
+        offset_val = int(settings.get('CONTENT_SCAN_OFFSET', 0))
+        target_path = file_path
+        
+        if offset_val > 0:
+            items, _ = db.get_media_page(offset=offset_val, limit=1)
+            if items:
+                target_path = items[0]['file_path']
+            else:
+                target_path = None
+                
+        if target_path:
+            threading.Thread(
+                target=_content_scan_callback,
+                args=(target_path,),
+                daemon=True
+            ).start()
 
     # Extract metadata in background
     threading.Thread(

@@ -3,7 +3,7 @@ import { useMediaList } from '../hooks/useMediaList';
 import { useToggles } from '../hooks/useToggles';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useMediaFilter } from '../hooks/useMediaFilter';
-import { deleteMedia, flagMedia, unflagMedia, markSafe } from '../utils/api';
+import { deleteMedia, flagMedia, unflagMedia, markSafe, unmarkSafe, scanFolder } from '../utils/api';
 import FolderBrowser from '../components/FolderBrowser/FolderBrowser';
 import MediaGrid from '../components/MediaGrid/MediaGrid';
 import HeroViewer from '../components/HeroViewer/HeroViewer';
@@ -20,6 +20,7 @@ export default function Gallery() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showMetadata, setShowMetadata] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
+  const [scanProgress, setScanProgress] = useState(null);
 
   const {
     items,
@@ -29,6 +30,9 @@ export default function Gallery() {
     setFilter,
     loadMore,
     prependItem,
+    removeItem,
+    removeItemByFilename,
+    updateItem,
     refresh
   } = useMediaList({
     subfolder: currentFolder,
@@ -63,13 +67,20 @@ export default function Gallery() {
 
   // Handle WebSocket updates
   useEffect(() => {
-    if (lastMessage?.type === 'new_image' || lastMessage?.type === 'media_deleted') {
-      setTimeout(() => {
-        refresh();
-      }, 500);
+    if (lastMessage?.type === 'new_image') {
+      prependItem(lastMessage);
+      clearLastMessage();
+    } else if (lastMessage?.type === 'media_deleted') {
+      removeItemByFilename(lastMessage.filename);
+      clearLastMessage();
+    } else if (lastMessage?.type === 'scan_progress') {
+      setScanProgress(lastMessage.data);
+      if (lastMessage.data.complete) {
+        setTimeout(() => setScanProgress(null), 3000);
+      }
       clearLastMessage();
     }
-  }, [lastMessage, clearLastMessage, refresh]);
+  }, [lastMessage, clearLastMessage, prependItem, removeItemByFilename]);
 
   const handleFolderSelect = (folder) => {
     setCurrentFolder(folder);
@@ -112,8 +123,16 @@ export default function Gallery() {
     if (!activeItem) return;
     try {
       await deleteMedia(activeItem.id);
-      refresh(); // Reload list
-      setActiveItemIndex(-1); // Close viewer as item is gone
+      removeItem(activeItem.id);
+      
+      // If we deleted the very last item in the list, we need to go back one
+      // Otherwise, the array shrinks and the next item automatically falls into activeItemIndex!
+      setActiveItemIndex(prev => {
+        if (prev >= items.length - 1) {
+          return Math.max(0, prev - 1);
+        }
+        return prev;
+      });
     } catch (err) {
       alert(`Error deleting: ${err.message}`);
     }
@@ -122,12 +141,14 @@ export default function Gallery() {
   const handleFlagToggle = async () => {
     if (!activeItem) return;
     try {
+      let res;
       if (activeItem.is_content_locked) {
-        await unflagMedia(activeItem.id);
+        res = await unflagMedia(activeItem.id);
+        updateItem(activeItem.id, { is_content_locked: false, subfolder: '', file_path: res.new_path || activeItem.file_path });
       } else {
-        await flagMedia(activeItem.id);
+        res = await flagMedia(activeItem.id);
+        updateItem(activeItem.id, { is_content_locked: true, subfolder: 'NSFW', file_path: res.new_path || activeItem.file_path });
       }
-      refresh(); // Reload list to get updated status
     } catch (err) {
       alert(`Error toggling flag: ${err.message}`);
     }
@@ -136,10 +157,17 @@ export default function Gallery() {
   const handleMarkSafe = async () => {
     if (!activeItem) return;
     try {
-      await markSafe(activeItem.id);
-      refresh(); // Reload list to get updated status
+      let res;
+      const isSafe = (activeItem.subfolder || '').toLowerCase().includes('safe');
+      if (isSafe) {
+        res = await unmarkSafe(activeItem.id);
+        updateItem(activeItem.id, { subfolder: '', file_path: res.new_path || activeItem.file_path });
+      } else {
+        res = await markSafe(activeItem.id);
+        updateItem(activeItem.id, { subfolder: 'SAFE', file_path: res.new_path || activeItem.file_path });
+      }
     } catch (err) {
-      alert(`Error marking safe: ${err.message}`);
+      alert(`Error toggling safe mark: ${err.message}`);
     }
   };
 
@@ -159,6 +187,25 @@ export default function Gallery() {
     setFullscreen(!fullscreen);
   };
 
+  const handleScanFolder = async () => {
+    try {
+      const res = await scanFolder(currentFolder);
+      if (!res.success) {
+        alert(res.error || "Failed to start scan");
+      }
+    } catch (err) {
+      alert(`Error starting scan: ${err.message}`);
+    }
+  };
+
+  useEffect(() => {
+    const handleScanRequest = () => {
+      handleScanFolder();
+    };
+    window.addEventListener('scan-folder-request', handleScanRequest);
+    return () => window.removeEventListener('scan-folder-request', handleScanRequest);
+  }, [currentFolder]);
+
   return (
     <div className={`gallery-page ${fullscreen ? 'fullscreen-mode' : ''}`}>
       {/* Top Toolbar */}
@@ -169,27 +216,38 @@ export default function Gallery() {
             onFolderSelect={handleFolderSelect} 
           >
             <div className="slider-container" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Size: {toggles.galleryThumbnailSize}</label>
-              <input 
-                type="range" 
-                min="1" 
-                max="5" 
+              <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Size:</label>
+              <select 
                 value={toggles.galleryThumbnailSize} 
                 onChange={e => toggles.updateGalleryThumbnailSize(Number(e.target.value))}
-                style={{ width: '80px', accentColor: 'var(--primary)' }}
-              />
+                className="input"
+                style={{ padding: '4px 8px' }}
+              >
+                {[1,2,3,4,5,6,7,8].map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
             </div>
-            <form className="search-form" onSubmit={handleSearch} style={{ margin: 0, minWidth: '200px' }}>
+            
+            <form className="search-form" onSubmit={handleSearch} style={{ margin: 0, flexGrow: 1, minWidth: '150px' }}>
               <input 
                 type="text" 
                 className="input search-input" 
                 placeholder="Search prompt, model..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ padding: '4px 8px' }}
+                style={{ padding: '4px 8px', width: '100%' }}
               />
-              <button type="submit" className="btn btn-ghost" style={{ padding: '4px 8px' }}>🔍</button>
             </form>
+            
+            {scanProgress && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', flexGrow: 1, padding: '0 12px', color: 'var(--text-secondary)', minWidth: '250px', flexBasis: '250px' }}>
+                <div style={{ flexGrow: 1, background: 'var(--bg-elevated)', height: '6px', borderRadius: '3px', overflow: 'hidden', minWidth: '100px' }}>
+                  <div style={{ width: `${scanProgress.total ? (scanProgress.processed / scanProgress.total) * 100 : 0}%`, background: 'var(--primary)', height: '100%', transition: 'width 0.2s' }}></div>
+                </div>
+                <div style={{ whiteSpace: 'nowrap' }}>
+                  {scanProgress.processed}/{scanProgress.total} checked • {scanProgress.moved} flagged
+                </div>
+              </div>
+            )}
           </FolderBrowser>
         </div>
       )}
@@ -223,6 +281,13 @@ export default function Gallery() {
                 onPrev={handleNewer} 
                 onClose={fullscreen ? () => setFullscreen(false) : closeViewer} 
               />
+              {(activeItem.is_content_locked || activeItem.is_nsfw || (activeItem.subfolder || '').toLowerCase().includes('safe')) ? (
+                <div className="media-badges" style={{ bottom: '16px', right: '16px', transform: 'scale(1.2)', transformOrigin: 'bottom right' }}>
+                  {activeItem.is_content_locked ? <div className="nsfw-badge">NSFW</div> : null}
+                  {activeItem.is_nsfw ? <div className="safemode-badge">Safe Mode</div> : null}
+                  {(activeItem.subfolder || '').toLowerCase().includes('safe') ? <div className="safe-badge">SAFE</div> : null}
+                </div>
+              ) : null}
               <MetadataOverlay item={activeItem} showBottomPane={showMetadata} />
             </div>
 
@@ -254,18 +319,27 @@ export default function Gallery() {
                   </svg>
                 </button>
                 <button className={`btn-icon toggle-btn success ${(activeItem.subfolder || '').toLowerCase().includes('safe') ? 'active' : ''}`} onClick={handleMarkSafe} title="Mark Safe">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill={(activeItem.subfolder || '').toLowerCase().includes('safe') ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                     <polyline points="9 12 11 14 15 10"></polyline>
                   </svg>
                 </button>
-                <button className={`btn-icon toggle-btn ${fullscreen ? 'active' : ''}`} onClick={handleExpandView} title="Expanded View">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="15 3 21 3 21 9"></polyline>
-                    <polyline points="9 21 3 21 3 15"></polyline>
-                    <line x1="21" y1="3" x2="14" y2="10"></line>
-                    <line x1="3" y1="21" x2="10" y2="14"></line>
-                  </svg>
+                <button className={`btn-icon toggle-btn ${fullscreen ? 'active' : ''}`} onClick={handleExpandView} title={fullscreen ? "Exit Expanded View" : "Expanded View"}>
+                  {fullscreen ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="4 14 10 14 10 20"></polyline>
+                      <polyline points="20 10 14 10 14 4"></polyline>
+                      <line x1="14" y1="10" x2="21" y2="3"></line>
+                      <line x1="3" y1="21" x2="10" y2="14"></line>
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="15 3 21 3 21 9"></polyline>
+                      <polyline points="9 21 3 21 3 15"></polyline>
+                      <line x1="21" y1="3" x2="14" y2="10"></line>
+                      <line x1="3" y1="21" x2="10" y2="14"></line>
+                    </svg>
+                  )}
                 </button>
                 <button className="btn-icon toggle-btn" onClick={toggleAppFullscreen} title="Toggle Browser Fullscreen">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

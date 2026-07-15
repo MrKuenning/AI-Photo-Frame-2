@@ -3,7 +3,7 @@ import { useWebSocket } from '../hooks/useWebSocket';
 import { useToggles } from '../hooks/useToggles';
 import { useMediaFilter } from '../hooks/useMediaFilter';
 import { useMediaList } from '../hooks/useMediaList';
-import { deleteMedia, flagMedia, unflagMedia, markSafe, getThumbUrl } from '../utils/api';
+import { deleteMedia, flagMedia, unflagMedia, markSafe, unmarkSafe, getThumbUrl } from '../utils/api';
 import HeroViewer from '../components/HeroViewer/HeroViewer';
 import MetadataOverlay from '../components/MetadataOverlay/MetadataOverlay';
 import './Home.css';
@@ -25,6 +25,8 @@ export default function Home() {
     loadMore,
     prependItem,
     removeItem,
+    removeItemByFilename,
+    updateItem,
     refresh
   } = useMediaList({
     safe_mode: toggles.safeMode,
@@ -43,7 +45,7 @@ export default function Home() {
   // Safety check for out of bounds index
   useEffect(() => {
     if (mediaList.length > 0 && selectedIndex >= mediaList.length) {
-      setSelectedIndex(0);
+      setSelectedIndex(mediaList.length - 1);
     }
   }, [mediaList.length, selectedIndex]);
 
@@ -54,13 +56,14 @@ export default function Home() {
 
   // Handle WebSocket updates
   useEffect(() => {
-    if (lastMessage?.type === 'new_image' || lastMessage?.type === 'media_deleted') {
-      setTimeout(() => {
-        refresh();
-      }, 500);
+    if (lastMessage?.type === 'new_image') {
+      prependItem(lastMessage.data);
+      clearLastMessage();
+    } else if (lastMessage?.type === 'media_deleted') {
+      removeItemByFilename(lastMessage.filename);
       clearLastMessage();
     }
-  }, [lastMessage, clearLastMessage, refresh]);
+  }, [lastMessage, clearLastMessage, prependItem, removeItemByFilename]);
 
   // Default selection when mediaList loads
   useEffect(() => {
@@ -109,7 +112,7 @@ export default function Home() {
     if (!currentItem) return;
     try {
       await deleteMedia(currentItem.id);
-      loadMedia(); // Reload list
+      removeItem(currentItem.id);
     } catch (err) {
       alert(`Error deleting: ${err.message}`);
     }
@@ -118,12 +121,14 @@ export default function Home() {
   const handleFlagToggle = async () => {
     if (!currentItem) return;
     try {
+      let res;
       if (currentItem.is_content_locked) {
-        await unflagMedia(currentItem.id);
+        res = await unflagMedia(currentItem.id);
+        updateItem(currentItem.id, { is_content_locked: false, subfolder: '', file_path: res.new_path || currentItem.file_path });
       } else {
-        await flagMedia(currentItem.id);
+        res = await flagMedia(currentItem.id);
+        updateItem(currentItem.id, { is_content_locked: true, subfolder: 'NSFW', file_path: res.new_path || currentItem.file_path });
       }
-      loadMedia(); // Reload list to get updated status
     } catch (err) {
       alert(`Error toggling flag: ${err.message}`);
     }
@@ -132,10 +137,17 @@ export default function Home() {
   const handleMarkSafe = async () => {
     if (!currentItem) return;
     try {
-      await markSafe(currentItem.id);
-      loadMedia(); // Reload list to get updated status
+      let res;
+      const isSafe = (currentItem.subfolder || '').toLowerCase().includes('safe');
+      if (isSafe) {
+        res = await unmarkSafe(currentItem.id);
+        updateItem(currentItem.id, { subfolder: '', file_path: res.new_path || currentItem.file_path });
+      } else {
+        res = await markSafe(currentItem.id);
+        updateItem(currentItem.id, { subfolder: 'SAFE', file_path: res.new_path || currentItem.file_path });
+      }
     } catch (err) {
-      alert(`Error marking safe: ${err.message}`);
+      alert(`Error toggling safe mark: ${err.message}`);
     }
   };
 
@@ -233,11 +245,6 @@ export default function Home() {
               <div className="text-center p-4 text-muted" style={{ gridColumn: `1 / -1` }}>Loading...</div>
             )}
           </div>
-          
-          <div className="ws-status sidebar-footer">
-            <div className={`status-dot ${isConnected ? 'online' : 'offline'}`}></div>
-            {isConnected ? 'Live' : 'Connecting...'}
-          </div>
         </div>
       )}
 
@@ -252,6 +259,13 @@ export default function Home() {
                 onPrev={handleNewer} 
                 onClose={() => setFullscreen(false)} 
               />
+              {(currentItem.is_content_locked || currentItem.is_nsfw || (currentItem.subfolder || '').toLowerCase().includes('safe')) ? (
+                <div className="media-badges" style={{ bottom: '16px', right: '16px', transform: 'scale(1.2)', transformOrigin: 'bottom right' }}>
+                  {currentItem.is_content_locked ? <div className="nsfw-badge">NSFW</div> : null}
+                  {currentItem.is_nsfw ? <div className="safemode-badge">Safe Mode</div> : null}
+                  {(currentItem.subfolder || '').toLowerCase().includes('safe') ? <div className="safe-badge">SAFE</div> : null}
+                </div>
+              ) : null}
               <MetadataOverlay item={currentItem} showBottomPane={showMetadata} />
             </div>
 
@@ -283,18 +297,27 @@ export default function Home() {
                   </svg>
                 </button>
                 <button className={`btn-icon toggle-btn success ${(currentItem.subfolder || '').toLowerCase().includes('safe') ? 'active' : ''}`} onClick={handleMarkSafe} title="Mark Safe">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill={(currentItem.subfolder || '').toLowerCase().includes('safe') ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                     <polyline points="9 12 11 14 15 10"></polyline>
                   </svg>
                 </button>
-                <button className={`btn-icon toggle-btn ${fullscreen ? 'active' : ''}`} onClick={handleExpandView} title="Expanded View">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="15 3 21 3 21 9"></polyline>
-                    <polyline points="9 21 3 21 3 15"></polyline>
-                    <line x1="21" y1="3" x2="14" y2="10"></line>
-                    <line x1="3" y1="21" x2="10" y2="14"></line>
-                  </svg>
+                <button className={`btn-icon toggle-btn ${fullscreen ? 'active' : ''}`} onClick={handleExpandView} title={fullscreen ? "Exit Expanded View" : "Expanded View"}>
+                  {fullscreen ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="4 14 10 14 10 20"></polyline>
+                      <polyline points="20 10 14 10 14 4"></polyline>
+                      <line x1="14" y1="10" x2="21" y2="3"></line>
+                      <line x1="3" y1="21" x2="10" y2="14"></line>
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="15 3 21 3 21 9"></polyline>
+                      <polyline points="9 21 3 21 3 15"></polyline>
+                      <line x1="21" y1="3" x2="14" y2="10"></line>
+                      <line x1="3" y1="21" x2="10" y2="14"></line>
+                    </svg>
+                  )}
                 </button>
                 <button className="btn-icon toggle-btn" onClick={toggleAppFullscreen} title="Toggle Browser Fullscreen">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

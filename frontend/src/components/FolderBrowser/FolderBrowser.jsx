@@ -55,8 +55,9 @@ export default function FolderBrowser({ currentFolder, onFolderSelect, children 
   return (
     <div className="folder-browser">
       {/* Breadcrumbs */}
-      <div className="breadcrumbs" style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--space-xs)' }}>
+      {/* Breadcrumbs */}
+      <div className="breadcrumbs">
+        <div className="breadcrumb-path">
           <button 
             className={`crumb-btn ${!currentFolder ? 'active' : ''}`}
             onClick={() => handleBreadcrumbClick('')}
@@ -78,7 +79,7 @@ export default function FolderBrowser({ currentFolder, onFolderSelect, children 
         </div>
 
         {children && (
-          <div className="breadcrumb-actions" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <div className="breadcrumb-actions">
             {children}
           </div>
         )}
