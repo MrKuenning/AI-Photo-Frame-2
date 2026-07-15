@@ -1,0 +1,97 @@
+# AI Photo Frame - Detailed Application Description
+
+## Overview
+AI Photo Frame is a modern, high-performance local web server application built with Python (Flask) and Socket.IO. It is designed specifically to serve as a real-time monitor, gallery, and digital photo frame for AI-generated images and videos. The application watches a designated output folder, instantly displaying newly generated media in a sleek, glassmorphism-styled dark UI. 
+
+## Key Features
+
+### 1. Auto Image Refresh (Real-Time Monitoring)
+The application utilizes the Python `watchdog` library to monitor the file system for new file creation events. When your AI generation tool outputs a new image or video into the monitored folder, the backend detects this instantly and emits a WebSocket event to the front-end clients. The UI then updates in real-time to display the latest generation without requiring a manual page refresh. This allows the application to act as a "Live View" monitor on a secondary display or tablet.
+
+### 2. Advanced Metadata Parsing
+AI media often embeds complex generation parameters. The app features robust metadata extraction capabilities to display this information via an overlay:
+- **Multiple Data Sources:** It intelligently parses data from EXIF `UserComment` fields, embedded PNG text chunks, JSON blobs, and can even fallback to parsing complex filename patterns.
+- **Extracted Parameters:** It extracts and formats the Prompt, Negative Prompt, Seed, Model/Checkpoint, Dimensions, and Generation Date.
+- **LoRA Detection:** It specifically parses out which LoRAs (Low-Rank Adaptations) were used in the generation, displaying the LoRA names alongside their corresponding weights/multipliers.
+- **Multi-Engine Compatibility:** Seamlessly handles the varied metadata formatting from different generation engines (e.g., Z-Image, Wan2GP, Forge, webui).
+
+### 3. Three Distinct Viewing Modes
+- **Home Page:** Features a split view with a scrollable sidebar of recent thumbnails and a large "Hero" viewer. It overrides the current view to show new images as they arrive.
+- **Gallery Page:** A robust file browser supporting recursive folder navigation, searching, and filtering. Allows you to browse thousands of images organized by folders, with infinite scrolling and a detail view.
+- **Picture Frame Mode:** A minimalist, distraction-free full-screen slideshow mode. It scales the newest image to fill the screen while maintaining the aspect ratio, making it perfect for a dedicated tablet or display.
+
+### 4. Smart Content Filtering & Safety
+- **AI Content Scanning:** An optional toggle that uses a lightweight AI nudity detector (NudeNet) to scan incoming images in the background. Flagged images are automatically moved to hidden NSFW folders.
+- **Safe Mode & Content Lock:** A filtering system based on keywords and specific folders. Helps keep the main views clean of NSFW or sensitive generations.
+- **Role-Based Authentication:** Configurable passphrases (Guest, User, Admin) to lock down destructive actions (Delete, Flag, Archive) or prevent unauthorized disabling of Safe Mode.
+
+### 5. Rich Media & Video Support
+- **Custom Video Player:** Plays various video formats (MP4, WebM, etc.) using custom controls that include frame-by-frame navigation, auto-looping, and a unique feature to extract and save the current video frame as a JPEG.
+- **Responsive Image Viewer:** Intuitive clicking to toggle between "stretch to fit" and "actual size" views, with panning and zooming support for large images.
+- **Media Toggles:** Easily filter the current view to show All Media, Photos Only, or Videos Only.
+
+### 6. Archive Management
+Built-in functionality to organize large libraries by easily archiving older generations into mirrored folder structures, keeping the main generation folders lightweight and fast to load.
+
+
+
+Created useWebSocket.js
+Created useMediaList.js
+Created useAuth.js
+Created useToggles.js
+Edited task.md
+Created Header.jsx
+Created Header.css
+Created MediaGrid.jsx
+Created MediaGrid.css
+Created HeroViewer.jsx
+Created HeroViewer.css
+Created VideoPlayer.jsx
+Created VideoPlayer.css
+Created MetadataOverlay.jsx
+Created MetadataOverlay.css
+Created FolderBrowser.jsx
+Created FolderBrowser.css
+Edited task.md
+Created Home.jsx
+Created Home.css
+Created Gallery.jsx
+Created Gallery.css
+Created Frame.jsx
+Created Frame.css
+Edited App.jsx
+Edited App.jsx
+Edited App.css
+Viewed main.jsx:1-11
+Edited task.md
+Edited task.md
+Created Build.bat
+Viewed config.ini:1-20
+Ran command: `Copy-Item "c:\Users\Brady\~Applications\Projects\AI - WebUI - Photo Frame 5\App1 - Photo Frame 5\config.ini" "c:\Users\Brady\~Applications\Projects\AI - WebUI - Photo Frame 5\App1 - Photo Frame 5\Photo Frame 6\config.ini"`
+Ran command: `cmd /c "Build.bat"`
+Used tool: schedule
+Used tool: manage_task
+Ran command: `cmd /c "move src\hooks\useAuth.js src\hooks\useAuth.jsx & move src\hooks\useToggles.js src\hooks\useToggles.jsx"`
+Edited MetadataOverlay.jsx
+Edited HeroViewer.jsx
+Edited FolderBrowser.jsx
+Edited MediaGrid.jsx
+Ran command: `cmd /c "Build.bat"`
+Used tool: schedule
+Used tool: manage_task
+Used tool: manage_task
+Edited task.md
+Created walkthrough.md
+
+I've completed the implementation of the new architecture for **Photo Frame 6**. You can review the [walkthrough](file:///C:/Users/Brady/.gemini/antigravity-ide/brain/d76f7ffd-88a2-4675-910d-24aa942f19a1/walkthrough.md) artifact for a full summary of the changes.
+
+Here are the major highlights of the new setup:
+
+1. **In-Memory Thumbnails:** The app now resizes images completely in memory using PIL, sending the bytes directly to the browser. It no longer creates `.thumb` files on your hard drive, keeping your original directories clean.
+2. **Lightning-Fast Gallery:** The gallery now uses a virtualized scrolling grid (`@tanstack/react-virtual`) and an SQLite index, meaning it can load and scroll through thousands of images instantly without freezing the browser or hogging RAM.
+3. **Beautiful UI:** I built a brand-new dark mode interface using React. It features glassmorphism, fluid animations, and a much cleaner layout for the Home, Gallery, and fullscreen Frame pages. It also includes smooth zooming and panning via `react-zoom-pan-pinch`.
+4. **Reliable Live Updates:** The backend now uses `watchdog` to monitor your folders. When a new image is generated, it's instantly pushed to the React frontend via a true WebSocket connection, keeping the "Home" page perfectly synced.
+
+The production build of the frontend was successful. You can start the new version by running the **`Start Server.bat`** file located inside the `Photo Frame 6` folder. 
+
+Once running, it will automatically perform an initial index of your media and launch the web server. Let me know if you run into any issues during testing or want to adjust the aesthetic design!

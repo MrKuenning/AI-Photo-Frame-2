@@ -1,0 +1,463 @@
+# Changelog
+
+All notable changes to the AI Photo Frame application will be documented in this file.
+
+---
+
+## [2026-07-15]
+### Added
+- **Modern Web Framework Transition**<br>
+  Completely migrated the application from the legacy architecture to a modern stack utilizing a Vite + React frontend and a FastAPI backend. This provides vastly improved performance, a modular component architecture, and rapid hot-module reloading during development.
+- **Permanent Metadata Viewer**<br>
+  Added a new bottom pane for metadata viewing that can remain permanently open while browsing.
+- **Quick Metadata Viewer**<br>
+  Retained the floating top-right metadata button, ensuring it is always available for quick peeks.
+- **Clipboard Support**<br>
+  Both metadata views now include a convenient "copy to clipboard" button for the prompt.
+- **View Settings Tab**<br>
+  Created a dedicated tab in the Settings Modal for customizing layout and UI preferences.
+- **Thumbnail Aspect Ratio Setting**<br>
+  Added the ability to choose between `Square (1:1 Crop)` or `Original Aspect Ratio` for thumbnail displays globally.
+- **Dynamic Gallery Grid**<br>
+  The gallery now calculates how many thumbnails fit into the view based on the window width and requested size setting. Thumbnails will stay exactly the same size when the hero viewer slides open/closed!
+- **Mobile Responsive Header**<br>
+  Implemented a hamburger menu and converted the logo to a compact icon for mobile views.
+- **Pill-Style Toggles**<br>
+  Redesigned the Safe Mode, Folder Lock, and Content Scan switches into illuminated pill buttons that clearly indicate their active state.
+- **Manual Safe Mode Exclusions**<br>
+  Added a "Mark Safe" (Shield Check) button in the Hero Viewer. This physically moves files into a `/SAFE` directory, guaranteeing they are excluded from future NudeNet content scans.
+- **Dynamic Content Badges**<br>
+  Introduced a unified stacking badge system on thumbnails:
+  - **NSFW (Red)**: Indicates the file is actively residing in an NSFW folder.
+  - **Safe Mode (Yellow)**: Indicates the image would be filtered by AI/keyword settings.
+  - **SAFE (Green)**: Indicates the image has been manually whitelisted in a SAFE folder.
+
+### Changed
+- **Home Grid Layout**<br>
+  Constrained the max slider limit for the Home page to 4 columns to prevent overcrowding, while allowing vertical heights to flex cleanly.
+- **Gallery Grid Settings**<br>
+  Replaced `Gallery Default Columns` with a fluid `Gallery Thumbnail Size` scale (1-5), allowing the grid to auto-reflow rather than forcing a specific number of columns.
+- **Max Initial Load**<br>
+  Moved the "Max Initial Load" configuration field from the Global settings tab to the View settings tab.
+- **Image Grid Styles**<br>
+  Modified the `.aspect-original` CSS classes on both the Home and Gallery pages to perfectly center uncropped images within a unified square padding box without distortion.
+- **Settings State Synchronization**<br>
+  Linked settings save actions to directly trigger immediate UI updates via `useToggles` hooks without requiring a page refresh.
+- **Settings Modal Consolidation**<br>
+  Relocated `Metadata Extraction` and `Hide Archive` to the new View tab. Standardized modal heights to eliminate vertical layout jumps when switching tabs.
+- **Hero Viewer Navigation**<br>
+  Swapped, widened, and standardized the Next/Previous buttons across Home and Gallery views. The left button ("⬅ Next") now consistently navigates to newer files, while the right button ("Previous ➡") navigates to older files.
+- **Flag Button Behavior**<br>
+  Wired the NSFW Flag button to explicitly check and toggle physical file paths, ensuring flagged images are cleanly moved in and out of the designated `/NSFW` directory.
+
+### Fixed
+- **JSX Errors**<br>
+  Fixed UI breaking syntax errors in `SettingsModal.jsx`.
+- **Thumbnail Heights**<br>
+  Standardized thumbnail container sizing so rows line up cleanly.
+
+### Removed
+- **Unused Configurations**<br>
+  Purged legacy unused configurations from `config.py` and backend logic, including `HOME_THUMBNAIL_SIZE`, `GALLERY_THUMBNAIL_SIZE`, `GALLERY_PREVIEW_SIZE`, and `PER_PAGE` (replaced entirely by `MAX_INITIAL_LOAD`).
+
+
+## [2026-03-31]
+### Added
+- **UI & Button Layout Optimization**<br>
+  Standardized the look and feel of action buttons across the application. All tool buttons (Metadata, Delete, Flag, Expand, Fullscreen) now share a uniform 40px diameter, matching the video player controls. Navigation buttons (Previous/Next) have been aligned to the same 40px height for perfect visual consistency.
+- **Mobile Navigation Refinement**<br>
+  Optimized the mobile hero view footer to ensure all 7 action buttons fit on a single row without wrapping or horizontal overflow. This was achieved by compressing button padding and inter-button gaps on narrow screens.
+- **Expanded vs. Fullscreen Differentiation**<br>
+  Separated the internal "Expanded View" and system "Browser Fullscreen" into distinct controls. The Expanded view now features specific `bi-arrows-angle-expand`/`contract` icons and descriptive tooltips to distinguish it from the browser-level fullscreen toggle.
+
+### Fixed
+- **Mobile Video Control Wrapping**<br>
+  Repositioned the video time display above the progress bar on mobile devices. This prevents the timestamp from forcing the main playback buttons onto multiple rows, ensuring a clean and accessible control bar on small screens.
+
+## [2026-03-26]
+### Added
+- **Unified Media Viewer Standardization**<br>
+  Standardized the image and video viewing experience across all five hero views: Home (Normal/Expanded), Gallery (Normal/Expanded), and the Frame page. All views now share a common codebase for interactive media interaction.
+- **Shared Interactive Controls**<br>
+  Enabled the existing mouse-based zoom (scroll wheel) and panning (drag) system for images on the Frame page, and replaced native video controls with consistent custom player controls across the entire application.
+- **Universal Media Sizing**<br>
+  All hero views now consistently support both upscaling and downscaling ("expand or contract") media to fill the viewing area while strictly respecting the natural aspect ratio via `object-fit: contain`. Fixed a specific issue with small images failing to expand in the Gallery preview.
+
+### Changed
+- **Control Cleanup**<br>
+  Removed the legacy `image_size_toggle.js` (stretching toggle) as its functionality has been superseded by the superior shared zoom/pan module.
+
+## [2026-03-24]
+### Fixed
+- **Metadata Extraction Resiliency**<br>
+  Fixed an issue where Automatic1111/Forge EXIF metadata lacking newlines failed to parse. Corrected UTF-16 UserComment decoding for images without byte-order marks to prevent garbled text, and fixed Wan2GP JSON extraction failing when prepended with ASCII encoding markers.
+
+## [2026-03-20]
+### Added
+- **Metadata Copy-to-Clipboard**<br>
+  Each metadata line in the Home and Gallery pages now features a subtle copy button. Clicking it instantly copies the specific value (Prompt, Seed, etc.) to the clipboard with visual confirmation via a checkmark icon.
+
+### Fixed
+- **Gallery Video Playback Resolution**<br>
+  Resolved an issue where videos in the gallery would fail to load their source URL correctly. Fixed a specific bug with `<source>` tag resolution and corrected a typo in the `onerror` event handler to ensure error diagnostics are properly logged.
+- **Media Streaming Stability Overhaul**<br>
+  Re-engineered the backend video serving to use a memory-efficient chunked generator for range requests. This replaces the old in-memory buffering, providing much smoother seeking on all devices and handling abrupt client-side disconnections (`WinError 10054`) gracefully without server congestion.
+
+## [2026-03-11]
+### Fixed
+- **Chrome Video Playback Compatibility**<br>
+  Resolved an issue where video streams would fail to render and play on specific hardware configurations or Chrome profiles by explicitly enforcing `<source>` tag generation and improving `X-Content-Type-Options: nosniff` and `Cache-Control` server headers.
+- **Global Video Diagnostics**<br>
+  Added global error listeners specifically for media tags to help isolate decoding failures and provide actionable troubleshooting information in the Developer Console.
+
+- **Tri-State Logging System**<br>
+  Introduced a new "Logging Level" dropdown (Basic, Detailed, Debug) in the Global Settings menu. This synchronizes both backend Python terminal output and frontend JavaScript browser console logging to significantly reduce development noise when set to Basic.
+- **Port Collision Watchguard**<br>
+  Added an automated `psutil` interactive prompt upon server boot. If the application detects Port 5000 is occupied by a runaway/zombie python instance after a restart, it now prompts the user to cleanly execute a PID termination rather than silently failing to bind the socket.
+- **Windows Console Emoji Compliance**<br>
+  Forced `sys.stdout` encoding to `utf-8` on server startup to restore basic file-watcher emojis (✨, 📁, ❌, etc.) without triggering thread-crashing `cp1252` encoding errors inside PowerShell terminals.
+
+## [2026-03-09]
+### Added
+- **Configurable Server Port**<br>
+  Configurable server port in `config.ini` and settings UI. Added the ability to configure the web server's listening port through the Global Settings menu in the UI. This allows users to host the application on a custom port without modifying the source code.
+- **Metadata Extraction Toggle**<br>
+  Added a new toggle for Metadata Extraction that behaves like the existing Content Scan toggle. Easily disable metadata parsing (LoRAs, Prompts) for a significant performance boost on folders where it is unneeded. Includes matching permission configurations and an override passphrase in the Global Settings menu.
+- Improved media auto-update performance using fast-track discovery.
+
+### Changed
+- **Config Lifecycle**<br>
+  The `PORT` setting is now stored in `config.ini` and persists across sessions. Changes to the port in the UI are saved immediately but require a full server restart to take effect.
+
+## [2026-03-05]
+### Added
+- **Metadata Support**: Enhanced LoRA extraction from prompts and JSON metadata (WanGP, ComfyUI).
+- **Search Enhancements**: Search functionality expanded to include model names and prompt text.
+
+## [2026-03-02]
+### Added
+- **Performance Boost**: New "Fast-Track" media discovery bypasses full disk scans for near-instant UI updates when new files are detected.
+- **WebSocket Events**: New `new_image` event for real-time background processing notifications.
+
+## [2026-02-25]
+### Added
+- **Authentication & Permissions**:
+    - Multi-level access control (Guest, User, Admin) for Delete, Flag, and Archive actions.
+    - Passphrase protection for settings and sensitive UI toggles.
+    - Toggle-specific permission levels and override passphrases.
+- **Archive System**: Automated archiving of main folder content to a structured `Archive` subfolder.
+- **Mark Safe**: New functionality to manually whitelist files as "Safe" to prevent repeated NSFW flagging.
+- **Content Lock**: Separate toggle to hide content-locked folders independently of Safe Mode.
+- **Improved Zoom & Pan**: Overhauled image viewing logic for smoother zooming and dragging on both PC and mobile.
+- **Custom Video Controls**: Enhanced video player with better progress tracking and mobile responsiveness.
+
+---
+
+## [2026-02-11]
+
+### Added
+- **Enhanced Permission System**<br>
+  Overhauled the application's security model to support granular role-based access control (Guest/User/Admin). Critical actions (Delete, Flag, Archive) and Settings access can now be individually password-protected, allowing authorized users to perform specific tasks without full admin login.
+
+- **Content Lock**<br>
+  Introduced "Content Lock" as a dedicated feature separate from Safe Mode. While Safe Mode filters content based on AI analysis and keywords, Content Lock exclusively hides specific folders (e.g., "NSFW"), allowing for folder-based privacy control independent of content scanning.
+
+### Changed
+- **Relaxed Toggle Permissions**<br>
+  Content Lock and Content Scan toggles can now be enabled by any user (Guest). Only disabling these toggles requires higher permissions or a passphrase, matching Safe Mode behavior.
+
+- **Content Lock Persistence**<br>
+  Content Lock state is now saved to localStorage, ensuring it persists across browser sessions and syncs correctly with cookies.
+
+- **Standardized Unlock Modals**<br>
+  Updated "Hide Archive" and "Content Lock" unlock modals to use consistent yellow warning buttons, matching other security prompts.
+
+### Fixed
+- **Hide Archive content leakage**<br>
+  Fixed multiple issues where archived content would still appear as the "latest image" on the Home and Frame pages if it was the most recently modified file. The viewer now correctly skips archived content when "Hide Archive" is enabled, even if all other images are filtered out.
+
+- **Hide Archive unlock modal**<br>
+  Fixed a bug where the "Hide Archive" unlock modal failed to appear due to an ID mismatch in the code.
+
+- **Optimized Content Scanning**<br>
+  The background AI content scanner now properly skips files in the Archive folder, preventing unnecessary resource usage and tagging of archived content.
+
+### Performance
+- **Atomic Metadata Updates**<br>
+  Fixed race conditions during image scanning that caused "Folder Only" metadata to appear. The image list is now built in the background and swapped atomically, ensuring consistent data availability.
+
+- **Background Task Optimization**<br>
+  The background metadata enrichment task now intelligently skips the Archive folder and yields system resources, significantly reducing CPU usage and eliminating UI lag during scans.
+
+---
+
+## [2026-01-24]
+
+### Changed
+- **Image zoom overhaul**<br>
+  Completely rewrote the image zoom system. Now supports continuous zoom levels via scroll wheel (desktop) or pinch-to-zoom (mobile), with real-time drag-to-pan when zoomed. Double-click or double-tap toggles between fit-to-view and 100% actual size. Works consistently on Home and Gallery pages. CSS transitions are disabled during zoom for instant, lag-free responsiveness.
+
+### Fixed
+- **Unicode file paths in content scanner**<br>
+  Fixed content scanner failing on images with non-ASCII characters in their filenames (e.g., Chinese, Japanese). OpenCV's imread doesn't handle Unicode paths on Windows, so files are now temporarily copied to an ASCII-safe path before scanning.
+
+---
+
+## [2026-01-19]
+
+### Changed
+- **Settings Modal Reorganization**<br>
+  Restructured settings into distinct "Safe Mode" and "Content Scan" sections to clarify their different purposes. Moved NSFW Keywords and folders to Safe Mode, and NudeNet Labels to Content Scan.
+
+- **Restrictive Default Toggles**<br>
+  Renamed "Archive View" to "Hide Archive" and inverted the logic so that all default toggles (Safe Mode, Content Scan, Hide Archive) are restrictive when enabled.
+
+### Added
+- **NSFW Folders Setting**<br>
+  Added a new input field in Safe Mode settings to configure which folder names trigger the Safe Mode filter (e.g., "NSFW", "Adult").
+
+- **Settings GUI**<br>
+  New admin-only settings modal (gear icon) to configure all app settings via the UI. Includes sections for global settings, startup defaults, authentication, action permissions, toggle permissions, Safe Mode, and Content Scan.
+
+- **Clarified Descriptions**<br>
+  Updated tooltips and descriptions for Safe Mode and Content Scan to explicitly state which data sources (keywords, folders, labels) each uses. Added "Content Scan Only" badge to NudeNet labels.
+
+- **Hide Archive Toggle**<br>
+  New navbar toggle to hide/show archived content. Respects permission levels and optional passphrase protection like other toggles.
+
+- **Toggle Permissions & Passphrases**<br>
+  Each navbar toggle (Safe Mode, Content Scan, Hide Archive) can now have its own permission level (guest/user/admin) and override passphrase configured in settings. Unauthorized users see a lock modal prompting for passphrase.
+
+- **Content Scan Offset Setting**<br>
+  New setting to skip N newest images before scanning. Useful when generating images that aren't immediately complete (e.g., batch generation).
+
+---
+
+## [2026-01-13]
+
+### Added
+- **Draggable video scrubber**<br>
+  Added a draggable thumb/dot to the video progress bar for easier scrubbing. Thumb appears on hover, scales up while dragging, and supports both mouse and touch events for mobile.
+
+---
+
+## [2026-01-12]
+
+### Added
+- **Folder Only view toggle**<br>
+  Added a toggle button in the gallery toolbar to switch between recursive view (shows all subfolder content) and folder-only view (shows only images in the current folder). Useful for browsing parent folders without seeing masked NSFW subfolder content.
+
+---
+
+## [2026-01-10]
+
+### Added
+- **Flag NSFW button on home page**<br>
+  Added flag button next to delete in home page navigation. Icon toggles between outline (not flagged) and filled+highlighted (in NSFW folder). No confirmation dialog.
+
+### Changed
+- **Flag/Unflag no longer requires admin**<br>
+  Users can now flag and unflag images without admin access. Only delete still requires admin role.
+
+### Fixed
+- **Mobile fullscreen navigation buttons**<br>
+  Improved CSS for card-footer positioning in fullscreen mode on mobile and tablet. Added JavaScript fallback to force card-footer visibility when entering fullscreen.
+- **iPad Navigation Visibility**<br>
+  Fixed issue where navigation and action buttons were off-screen or hidden on iPad/iOS devices by implementing `dvh` (dynamic viewport height) and proper safe-area padding.
+- **Gallery Toolbar Responsive Layout**<br>
+  Restructured gallery toolbar to wrap correctly on intermediate screens. Implemented dynamic JavaScript height adjustment to ensure content fits on screen when toolbar wraps.
+- **Mobile Home Page Image Sizing**<br>
+  Updated mobile home page layout to allow vertical images to utilize up to 75% of screen height, effectively using available space while keeping thumbnails accessible.
+- **Missing Flag Button on Mobile**<br>
+  Fixed bug where Flag button was incorrectly hidden on non-admin devices due to permission check logic.
+
+---
+
+## [2026-01-09]
+
+### Added
+- **Native video fullscreen button**<br>
+  New fullscreen button in video controls that uses the browser's native video fullscreen mode (separate from page expand).
+
+### Fixed
+- **Infinite scroll during scan**<br>
+  Gallery infinite scroll now detects when server is scanning files and waits/retries instead of incorrectly showing "No more images".
+
+- **Duplicate LoRAs in metadata**<br>
+  Fixed WanGP metadata showing same LoRA twice due to redundant `activated_loras` and `transformer_loras_filenames` fields.
+
+- **Dynamic image count in gallery**<br>
+  The "Loaded X of Y images" counter now updates as you scroll and load more images.
+
+---
+
+## [2026-01-08]
+
+### Added
+- **LoRA metadata extraction**<br>
+  Metadata view now displays LoRAs used with their weights. Supports A1111/Forge style `<lora:name:weight>` in prompts and WanGP JSON `activated_loras` fields.
+
+- **WanGP Comment field metadata**<br>
+  Metadata extraction now reads from the EXIF Comment field where WanGP stores its JSON metadata, in addition to the UserComment field used by Forge.
+
+---
+
+## [2026-01-06]
+
+### Added
+- **Authentication system**<br>
+  Optional passphrase-based login with user/admin roles. Configure `AUTH_ENABLED`, `USER_PASSPHRASE`, and `ADMIN_PASSPHRASE` in config.ini. Page is blurred until login when enabled.
+
+- **Safe Mode passphrase lock**<br>
+  Enable `SAFEMODE_LOCK_ENABLED` with a `SAFEMODE_PASSPHRASE` to prevent disabling Safe Mode without the passphrase. Once unlocked, toggle works freely for the session. Admins bypass the lock.
+
+- **Role-based delete permissions**<br>
+  When `ADMIN_PASSPHRASE` is set, only admin users can delete files or flag/unflag NSFW content. User role sees these buttons hidden.
+
+- **Content Scan feature**<br>
+  New toggle in navbar to automatically scan incoming images for NSFW content using NudeNet AI detection. Flagged images are automatically moved to `/NSFW` subfolders.
+
+- **Gallery Scan Content button**<br>
+  New button in gallery navigation to retroactively scan existing images in the current folder for NSFW content. Shows progress bar during scan.
+
+- **Flag NSFW button**<br>
+  New button in gallery preview panel (next to Delete) to manually flag any image as NSFW, moving it to the parent folder's NSFW subfolder.
+
+- **Refresh media button**<br>
+  New refresh icon button in navbar to manually rescan all media files, clearing stale placeholders from moved/deleted files.
+
+- **Configurable toggle defaults**<br>
+  New config options `SAFE_MODE_DEFAULT` and `CONTENT_SCAN_DEFAULT` to set initial toggle states for new users.
+
+- **Configurable nudity threshold**<br>
+  New `NUDITY_THRESHOLD` setting in config.ini (0.0-1.0) to control how sensitive the nudity detection is.
+
+- **Verbose scanner logging**<br>
+  Content scanner now outputs all detected body parts with confidence scores to console for debugging.
+
+- **Configurable NSFW detection labels**<br>
+  New `NSFW_LABELS` setting in config.ini to control exactly which body parts trigger NSFW flagging. All NudeNet labels are documented and configurable.
+
+- **Unflag NSFW button**<br>
+  The Flag button in gallery preview now dynamically shows "Unflag" (green) when viewing files already in NSFW folders, allowing users to undo false positives by moving files back to parent folder.
+
+- **Video NSFW scanning**<br>
+  Content scanner now supports video files (.mp4, .webm, .mov, .avi, .mkv) by extracting and scanning the last frame using ffmpeg. Ideal for AI-generated videos that reveal content at the end.
+
+### Fixed
+- **Safe Mode folder filtering**<br>
+  Fixed path separator handling for nested NSFW folders with mixed forward/backward slashes.
+
+- **Filename metadata parsing**<br>
+  Added support for underscore-based filename format: `date_seedNNNNNN_prompt.jpg`.
+
+- **Content scan file timing**<br>
+  Added 0.5s delay before scanning new files to ensure they're fully written to disk.
+
+- **Toggle sync with server**<br>
+  Content Scan toggle now syncs FROM server on page load, ensuring UI always reflects actual server state after restarts.
+
+- **Duplicate images in gallery**<br>
+  Fixed infinite scroll loading duplicate images. Switched from page-based to offset-based loading so initial 50 images batch and subsequent 20-image batches don't overlap.
+
+- **Gallery preview stays open on delete/flag**<br>
+  When deleting or flagging an image in gallery preview, the preview now shows the next image instead of closing.
+
+### Changed
+- **Improved ffmpeg error logging**<br>
+  Video frame extraction now logs ffmpeg stderr output when extraction fails, making it easier to diagnose video scanning issues.
+
+---
+
+## [2026-01-04]
+
+### Fixed
+- **Gallery preview panel appearing on small screens**<br>
+  Fixed responsive CSS that was incorrectly showing the preview panel (width: 100%) even when no image was selected. Now properly hides with width: 0 until an image is clicked.
+
+- **Video black screen in gallery expanded view**<br>
+  Fixed video not displaying when expanding to fullscreen on the gallery page. The issue was caused by the container using `flex-direction: row`, which placed the video and controls side-by-side and squished the video to 0px width. Added `flex-direction: column` to stack them vertically.
+
+- **Videos stretching to fill expanded view**<br>
+  Videos in fullscreen/expanded view now properly fill the available space above the navigation footer bar, with controls remaining accessible.
+
+- **Video pausing when entering expanded mode**<br>
+  Fixed videos pausing when clicking to expand to fullscreen. Now preserves play state and resumes playback after expansion.
+
+---
+
+## [2026-01-03]
+
+### Added
+- **Save video frame button**<br>
+  New camera icon in video controls captures the current frame and saves as a JPEG (95% quality). Filename format: `video.mp4-00001.jpg`. Saved frames inherit the video's modification date.
+
+- **Delete button on home page**<br>
+  Added trash icon button next to metadata button. Shows confirmation dialog before permanently deleting the current image/video.
+
+### Changed
+- **Responsive navbar layout**<br>
+  Implemented three-view responsive navigation with breakpoint at 1050px.
+
+### Fixed
+- **Mobile expanded video controls**<br>
+  Fixed video controls positioning in expanded mode on mobile using flexbox column layout.
+
+- **Mobile video controls overflow**<br>
+  Made video control buttons smaller (32x32) and hid time display when not expanded to prevent overflow.
+
+---
+
+## [2026-01-02]
+
+### Added
+- **Embedded metadata extraction**<br>
+  The application now reads full prompts, negative prompts, seed, model, and dimensions from embedded file metadata (EXIF, PNG chunks, video comments). Supports A1111/Forge and JSON format (WanGP, ComfyUI).
+
+- **Metadata and fullscreen toggle buttons**<br>
+  Replaced hover-based metadata display with toggle buttons in the navigation footer. Info icon toggles metadata overlay, fullscreen icon toggles expanded view.
+
+- **Custom video controls**<br>
+  Replaced native browser video controls with custom styled controls that auto-hide after 3 seconds. Features play/pause, progress bar, time display, and mute button.
+
+- **Video frame navigation buttons**<br>
+  Added four buttons: First Frame (⏮), Step Back (◀), Step Forward (▶), and Last Frame (⏭). Perfect for stepping through AI-generated videos.
+
+- **Mobile-responsive video controls**<br>
+  On mobile devices, the progress bar moves to its own full-width line above the buttons for easier seeking.
+
+- **Mobile-responsive sidebar**<br>
+  On narrow screens, the thumbnail sidebar moves below the main image with a scrollable grid layout.
+
+### Fixed
+- **Media type filter not working on home page refresh**<br>
+  Fixed by changing live update fetch to use `window.location.href` instead of `/`, preserving URL query parameters.
+
+- **Video not filling screen on Android**<br>
+  Expanded videos now use 100% dimensions instead of fixed viewport calculations.
+
+- **Video metadata not showing**<br>
+  Added filename parsing fallback for video metadata when ffprobe is not available.
+
+- **Prompt showing as Chinese characters**<br>
+  Fixed encoding detection to try UTF-8 first before falling back to UTF-16.
+
+---
+
+## [2025-12-20]
+
+### Fixed
+- **Fullscreen video scaling**<br>
+  Videos in fullscreen view on home and gallery pages now properly stretch to fit the entire screen.
+
+---
+
+## [2025-12-16]
+
+### Changed
+- **Improved UI responsiveness**<br>
+  Enhanced responsive design for all screen sizes, including proper mobile stacking for modal edit fields.
+
+### Refactored
+- **Standardized metadata display**<br>
+  Created shared `metadata_utils.js` module for consistent metadata loading across home, gallery, and frame pages.

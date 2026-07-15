@@ -1,0 +1,111 @@
+.gallery-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.gallery-toolbar {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--border-color);
+  z-index: 10;
+}
+
+.toolbar-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.search-form {
+  display: flex;
+  align-items: center;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  max-width: 400px;
+  flex-grow: 1;
+}
+
+.search-input {
+  border: none;
+  background: transparent;
+  flex-grow: 1;
+}
+
+.search-input:focus {
+  box-shadow: none;
+}
+
+.media-type-select {
+  width: auto;
+  min-width: 150px;
+}
+
+.gallery-content {
+  display: flex;
+  flex-grow: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.grid-section {
+  flex-grow: 1;
+  height: 100%;
+  transition: all var(--transition-base);
+}
+
+.viewer-section {
+  width: 60%;
+  height: 100%;
+  border-left: 1px solid var(--glass-border);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.close-viewer-btn {
+  position: absolute;
+  top: var(--space-md);
+  left: var(--space-md);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  font-size: 16px;
+  cursor: pointer;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.close-viewer-btn:hover {
+  background: var(--bg-hover);
+  transform: scale(1.1);
+}
+
+/* Split view adjustments */
+.split-view .grid-section {
+  width: 40%;
+  flex-grow: 0;
+}
+
+@media (max-width: 1024px) {
+  .split-view .grid-section {
+    display: none; /* Full screen viewer on smaller screens */
+  }
+  
+  .viewer-section {
+    width: 100%;
+    border-left: none;
+  }
+}

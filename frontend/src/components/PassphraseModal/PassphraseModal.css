@@ -1,0 +1,34 @@
+.passphrase-modal-content {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  width: 90%;
+  max-width: 400px;
+  margin: auto;
+  overflow: hidden;
+  box-shadow: var(--shadow-xl);
+  animation: fadeIn var(--transition-fast) ease;
+}
+
+.passphrase-modal-body {
+  padding: 1.5rem;
+}
+
+.passphrase-modal-body h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+}
+
+.passphrase-modal-body p {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  margin-bottom: 1.5rem;
+}
+
+.passphrase-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
