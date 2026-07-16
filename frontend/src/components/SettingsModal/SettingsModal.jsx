@@ -37,9 +37,9 @@ export default function SettingsModal({ onClose }) {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     let finalValue = type === 'checkbox' ? checked : value;
-    
+
     if (type === 'number' || type === 'range') {
-        finalValue = Number(value);
+      finalValue = Number(value);
     }
 
     setSettings(prev => ({
@@ -49,16 +49,16 @@ export default function SettingsModal({ onClose }) {
   };
 
   const handleCheckboxListChange = (name, value, isChecked) => {
-     let currentList = settings[name] ? settings[name].split(',').map(s => s.trim()).filter(Boolean) : [];
-     if (isChecked) {
-         if (!currentList.includes(value)) currentList.push(value);
-     } else {
-         currentList = currentList.filter(item => item !== value);
-     }
-     setSettings(prev => ({
-         ...prev,
-         [name]: currentList.join(', ')
-     }));
+    let currentList = settings[name] ? settings[name].split(',').map(s => s.trim()).filter(Boolean) : [];
+    if (isChecked) {
+      if (!currentList.includes(value)) currentList.push(value);
+    } else {
+      currentList = currentList.filter(item => item !== value);
+    }
+    setSettings(prev => ({
+      ...prev,
+      [name]: currentList.join(', ')
+    }));
   };
 
   const handleSave = async (e) => {
@@ -67,7 +67,7 @@ export default function SettingsModal({ onClose }) {
     setError('');
     try {
       await saveSettings(settings);
-      
+
       if (settings.HOME_THUMBNAIL_COLUMNS_DEFAULT !== undefined) {
         toggles.updateHomeThumbnailColumns(parseInt(settings.HOME_THUMBNAIL_COLUMNS_DEFAULT, 10));
       }
@@ -77,7 +77,7 @@ export default function SettingsModal({ onClose }) {
       if (settings.THUMBNAIL_ASPECT_RATIO !== undefined) {
         toggles.updateThumbnailAspectRatio(settings.THUMBNAIL_ASPECT_RATIO);
       }
-      
+
       onClose();
     } catch (err) {
       setError(err.message || 'Failed to save settings');
@@ -133,19 +133,19 @@ export default function SettingsModal({ onClose }) {
           {error && <div className="alert alert-danger mb-4">{error}</div>}
 
           <form id="settings-form" onSubmit={handleSave} className="settings-form-body">
-            
+
             {activeTab === 'global' && (
               <>
                 {/* Global Settings */}
                 <div className="settings-section">
                   <h3><span className="icon">📁</span> Global Settings</h3>
-                  
+
                   <div className="form-group">
                     <label>Server Port</label>
                     <input type="number" name="PORT" className="input" value={settings.PORT || 5000} onChange={handleChange} min="1024" max="65535" />
                     <small>Port number the web server runs on (requires restart)</small>
                   </div>
-                  
+
                   <div className="form-group">
                     <label>Image Folder Path</label>
                     <input type="text" name="IMAGE_FOLDER" className="input" value={settings.IMAGE_FOLDER || ''} onChange={handleChange} />
@@ -183,7 +183,7 @@ export default function SettingsModal({ onClose }) {
                 {/* Startup Defaults */}
                 <div className="settings-section">
                   <h3><span className="icon">⚡</span> Startup Defaults</h3>
-                  
+
                   <label className="toggle-switch form-group-inline">
                     <input type="checkbox" name="SAFE_MODE_DEFAULT" checked={!!settings.SAFE_MODE_DEFAULT} onChange={handleChange} />
                     <span className="toggle-track"></span>
@@ -218,7 +218,7 @@ export default function SettingsModal({ onClose }) {
               <>
                 <div className="settings-section">
                   <h3><span className="icon">🖼️</span> Grid Settings</h3>
-                  
+
                   <div className="form-group">
                     <label>Thumbnail Aspect Ratio</label>
                     <select name="THUMBNAIL_ASPECT_RATIO" className="input" value={settings.THUMBNAIL_ASPECT_RATIO || 'square'} onChange={handleChange}>
@@ -227,23 +227,23 @@ export default function SettingsModal({ onClose }) {
                     </select>
                     <small>How thumbnails should be cropped in grid views</small>
                   </div>
-                  
+
                   <div className="form-group">
-                    <label>Home Default Columns</label>
-                    <input type="number" name="HOME_THUMBNAIL_COLUMNS_DEFAULT" className="input" value={settings.HOME_THUMBNAIL_COLUMNS_DEFAULT || 3} onChange={handleChange} min="1" max="4" />
-                    <small>Default number of columns on the home page (1-4)</small>
+                    <label>Default Thumbnail Columns - Home</label>
+                    <input type="range" name="HOME_THUMBNAIL_COLUMNS_DEFAULT" className="input" value={settings.HOME_THUMBNAIL_COLUMNS_DEFAULT || 3} onChange={handleChange} min="1" max="4" style={{ width: '100%' }} />
+                    <small>Default number of columns on the home page (1=Fewest, 4=Most)</small>
                   </div>
 
                   <div className="form-group">
-                    <label>Gallery Thumbnail Size</label>
-                    <input type="range" name="GALLERY_THUMBNAIL_SIZE_DEFAULT" className="input" value={settings.GALLERY_THUMBNAIL_SIZE_DEFAULT || 3} onChange={handleChange} min="1" max="5" style={{width: '100%'}} />
+                    <label>Default Thumbnail Size - Gallery</label>
+                    <input type="range" name="GALLERY_THUMBNAIL_SIZE_DEFAULT" className="input" value={settings.GALLERY_THUMBNAIL_SIZE_DEFAULT || 3} onChange={handleChange} min="1" max="5" style={{ width: '100%' }} />
                     <small>Default thumbnail size on the gallery page (1=Smallest, 5=Largest)</small>
                   </div>
-                  
+
                   <div className="form-group">
-                    <label>Max Initial Load</label>
+                    <label>Initial Thumbnail Load</label>
                     <input type="number" name="MAX_INITIAL_LOAD" className="input" value={settings.MAX_INITIAL_LOAD || 100} onChange={handleChange} />
-                    <small>Maximum images to load initially on the grid</small>
+                    <small>Thumbnail images to load at a time</small>
                   </div>
                 </div>
               </>
@@ -255,7 +255,7 @@ export default function SettingsModal({ onClose }) {
                 <div className="settings-section">
                   <h3><span className="icon">🛡️</span> Feature Locking</h3>
                   <small className="section-desc mb-3 block">Set a passphrase to lock a feature. Leave blank to leave it unlocked.</small>
-                  
+
                   {[
                     { label: 'Settings Menu', key: 'SETTINGS' },
                     { label: 'Delete Files', key: 'DELETE' },
@@ -294,11 +294,11 @@ export default function SettingsModal({ onClose }) {
                 {/* Content Scan Settings */}
                 <div className="settings-section">
                   <h3 className="section-title-blue"><span className="icon">👁️</span> Content Scan Settings</h3>
-                  
+
                   <div className="info-box info-box-yellow mb-4">
                     <strong>Content Scan</strong> automatically detects and flags new files. It uses an AI-based NudeNet to scan incoming images. Flagged files are moved to NSFW folders.
                   </div>
-                  
+
                   <div className="form-group">
                     <label className="section-subtitle">NSFW Folders</label>
                     <input type="text" name="NSFW_FOLDERS" className="input mt-2" value={settings.NSFW_FOLDERS || ''} onChange={handleChange} />
@@ -327,7 +327,7 @@ export default function SettingsModal({ onClose }) {
                   <div className="form-group mt-4">
                     <label className="section-subtitle">NSFW Labels (NudeNet)</label>
                     <small className="mb-2 block">AI-detected body parts that trigger NSFW flagging</small>
-                    
+
                     <div className="nudenet-grid-container mt-3">
                       <div className="nudenet-panel nudenet-exposed">
                         <h4 className="panel-title text-warning">Exposed (High Priority)</h4>
@@ -347,7 +347,7 @@ export default function SettingsModal({ onClose }) {
                           ))}
                         </div>
                       </div>
-                      
+
                       <div className="nudenet-panel nudenet-covered">
                         <h4 className="panel-title text-info">Covered (Lower Priority)</h4>
                         <div className="panel-content">

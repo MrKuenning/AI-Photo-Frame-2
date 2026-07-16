@@ -4,6 +4,7 @@ import { useToggles } from '../hooks/useToggles';
 import { useMediaFilter } from '../hooks/useMediaFilter';
 import { useMediaList } from '../hooks/useMediaList';
 import { deleteMedia, flagMedia, unflagMedia, markSafe, unmarkSafe, getThumbUrl } from '../utils/api';
+import { useAuth } from '../hooks/useAuth';
 import HeroViewer from '../components/HeroViewer/HeroViewer';
 import MetadataOverlay from '../components/MetadataOverlay/MetadataOverlay';
 import './Home.css';
@@ -16,6 +17,7 @@ export default function Home() {
   const { isConnected, lastMessage, clearLastMessage } = useWebSocket();
   const toggles = useToggles();
   const { filterType, refreshKey } = useMediaFilter();
+  const { authStatus, requireUnlock } = useAuth();
 
   const {
     items: mediaList,
@@ -110,45 +112,51 @@ export default function Home() {
   // Action Handlers
   const handleDelete = async () => {
     if (!currentItem) return;
-    try {
-      await deleteMedia(currentItem.id);
-      removeItem(currentItem.id);
-    } catch (err) {
-      alert(`Error deleting: ${err.message}`);
-    }
+    requireUnlock('delete', authStatus?.delete_passphrase_required, async () => {
+      try {
+        await deleteMedia(currentItem.id);
+        removeItem(currentItem.id);
+      } catch (err) {
+        alert(`Error deleting: ${err.message}`);
+      }
+    });
   };
 
   const handleFlagToggle = async () => {
     if (!currentItem) return;
-    try {
-      let res;
-      if (currentItem.is_content_locked) {
-        res = await unflagMedia(currentItem.id);
-        updateItem(currentItem.id, { is_content_locked: false, subfolder: '', file_path: res.new_path || currentItem.file_path });
-      } else {
-        res = await flagMedia(currentItem.id);
-        updateItem(currentItem.id, { is_content_locked: true, subfolder: 'NSFW', file_path: res.new_path || currentItem.file_path });
+    requireUnlock('flag', authStatus?.flag_passphrase_required, async () => {
+      try {
+        let res;
+        if (currentItem.is_content_locked) {
+          res = await unflagMedia(currentItem.id);
+          updateItem(currentItem.id, { is_content_locked: false, subfolder: '', file_path: res.new_path || currentItem.file_path });
+        } else {
+          res = await flagMedia(currentItem.id);
+          updateItem(currentItem.id, { is_content_locked: true, subfolder: 'NSFW', file_path: res.new_path || currentItem.file_path });
+        }
+      } catch (err) {
+        alert(`Error toggling flag: ${err.message}`);
       }
-    } catch (err) {
-      alert(`Error toggling flag: ${err.message}`);
-    }
+    });
   };
 
   const handleMarkSafe = async () => {
     if (!currentItem) return;
-    try {
-      let res;
-      const isSafe = (currentItem.subfolder || '').toLowerCase().includes('safe');
-      if (isSafe) {
-        res = await unmarkSafe(currentItem.id);
-        updateItem(currentItem.id, { subfolder: '', file_path: res.new_path || currentItem.file_path });
-      } else {
-        res = await markSafe(currentItem.id);
-        updateItem(currentItem.id, { subfolder: 'SAFE', file_path: res.new_path || currentItem.file_path });
+    requireUnlock('flag', authStatus?.flag_passphrase_required, async () => {
+      try {
+        let res;
+        const isSafe = (currentItem.subfolder || '').toLowerCase().includes('safe');
+        if (isSafe) {
+          res = await unmarkSafe(currentItem.id);
+          updateItem(currentItem.id, { subfolder: '', file_path: res.new_path || currentItem.file_path });
+        } else {
+          res = await markSafe(currentItem.id);
+          updateItem(currentItem.id, { subfolder: 'SAFE', file_path: res.new_path || currentItem.file_path });
+        }
+      } catch (err) {
+        alert(`Error toggling safe mark: ${err.message}`);
       }
-    } catch (err) {
-      alert(`Error toggling safe mark: ${err.message}`);
-    }
+    });
   };
 
   const toggleAppFullscreen = () => {

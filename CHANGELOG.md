@@ -4,6 +4,17 @@ All notable changes to the AI Photo Frame application will be documented in this
 
 ---
 
+## [2.0.6] - 2026-07-16
+### Changed
+- **View Settings Redesign**<br>
+  Cleaned up the View Settings tab for better visual consistency. Renamed settings for clarity and updated both column and size controls to utilize uniform slider interfaces.
+
+### Fixed
+- **Action Passphrase UI**<br>
+  Fixed an issue where media actions (Delete, Flag, Mark Safe) would fail with a generic "Permission Denied" error if a passphrase was required. Lifted the Passphrase Modal into the global Auth Context so any component can seamlessly trigger a PIN prompt and resume its action upon success.
+- **Settings Sync Fix**<br>
+  Fixed a bug where "View Settings" (Grid Layout preferences) were not correctly fetching their defaults from the configuration file on load, causing the modal to fall back to hardcoded defaults.
+
 ## [2.0.5] - 2026-07-15
 ### Changed
 - **Mobile Gallery Redesign**<br>

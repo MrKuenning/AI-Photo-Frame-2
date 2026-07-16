@@ -64,6 +64,9 @@ def get_settings(request: Request):
         "METADATA_EXTRACTION": settings.get('METADATA_EXTRACTION', True),
         "CONTENT_LOCK_DEFAULT": settings.get('CONTENT_LOCK_DEFAULT', False),
         "HIDE_ARCHIVE": settings.get('HIDE_ARCHIVE', False),
+        "THUMBNAIL_ASPECT_RATIO": settings.get('THUMBNAIL_ASPECT_RATIO', 'square'),
+        "HOME_THUMBNAIL_COLUMNS_DEFAULT": settings.get('HOME_THUMBNAIL_COLUMNS_DEFAULT', 3),
+        "GALLERY_THUMBNAIL_SIZE_DEFAULT": settings.get('GALLERY_THUMBNAIL_SIZE_DEFAULT', 3),
         
         # Scanning
         "NSFW_KEYWORDS": ', '.join(settings.get('NSFW_KEYWORDS', [])),

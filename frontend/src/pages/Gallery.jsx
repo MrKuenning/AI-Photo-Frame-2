@@ -3,6 +3,7 @@ import { useMediaList } from '../hooks/useMediaList';
 import { useToggles } from '../hooks/useToggles';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useMediaFilter } from '../hooks/useMediaFilter';
+import { useAuth } from '../hooks/useAuth';
 import { deleteMedia, flagMedia, unflagMedia, markSafe, unmarkSafe, scanFolder } from '../utils/api';
 import FolderBrowser from '../components/FolderBrowser/FolderBrowser';
 import MediaGrid from '../components/MediaGrid/MediaGrid';
@@ -14,6 +15,7 @@ export default function Gallery() {
   const toggles = useToggles();
   const { isConnected, lastMessage, clearLastMessage } = useWebSocket();
   const { filterType, refreshKey } = useMediaFilter();
+  const { authStatus, requireUnlock } = useAuth();
   
   const [currentFolder, setCurrentFolder] = useState('');
   const [activeItemIndex, setActiveItemIndex] = useState(-1);
@@ -121,54 +123,57 @@ export default function Gallery() {
   // Action Handlers
   const handleDelete = async () => {
     if (!activeItem) return;
-    try {
-      await deleteMedia(activeItem.id);
-      removeItem(activeItem.id);
-      
-      // If we deleted the very last item in the list, we need to go back one
-      // Otherwise, the array shrinks and the next item automatically falls into activeItemIndex!
-      setActiveItemIndex(prev => {
-        if (prev >= items.length - 1) {
-          return Math.max(0, prev - 1);
+    requireUnlock('delete', authStatus?.delete_passphrase_required, async () => {
+      try {
+        await deleteMedia(activeItem.id);
+        
+        // If we deleted the very last item in the list, we need to go back one
+        if (activeItemIndex === items.length - 1 && items.length > 1) {
+          setActiveItemIndex(items.length - 2);
         }
-        return prev;
-      });
-    } catch (err) {
-      alert(`Error deleting: ${err.message}`);
-    }
+        
+        removeItem(activeItem.id);
+      } catch (err) {
+        alert(`Error deleting: ${err.message}`);
+      }
+    });
   };
 
   const handleFlagToggle = async () => {
     if (!activeItem) return;
-    try {
-      let res;
-      if (activeItem.is_content_locked) {
-        res = await unflagMedia(activeItem.id);
-        updateItem(activeItem.id, { is_content_locked: false, subfolder: '', file_path: res.new_path || activeItem.file_path });
-      } else {
-        res = await flagMedia(activeItem.id);
-        updateItem(activeItem.id, { is_content_locked: true, subfolder: 'NSFW', file_path: res.new_path || activeItem.file_path });
+    requireUnlock('flag', authStatus?.flag_passphrase_required, async () => {
+      try {
+        let res;
+        if (activeItem.is_content_locked) {
+          res = await unflagMedia(activeItem.id);
+          updateItem(activeItem.id, { is_content_locked: false, subfolder: '', file_path: res.new_path || activeItem.file_path });
+        } else {
+          res = await flagMedia(activeItem.id);
+          updateItem(activeItem.id, { is_content_locked: true, subfolder: 'NSFW', file_path: res.new_path || activeItem.file_path });
+        }
+      } catch (err) {
+        alert(`Error toggling flag: ${err.message}`);
       }
-    } catch (err) {
-      alert(`Error toggling flag: ${err.message}`);
-    }
+    });
   };
 
   const handleMarkSafe = async () => {
     if (!activeItem) return;
-    try {
-      let res;
-      const isSafe = (activeItem.subfolder || '').toLowerCase().includes('safe');
-      if (isSafe) {
-        res = await unmarkSafe(activeItem.id);
-        updateItem(activeItem.id, { subfolder: '', file_path: res.new_path || activeItem.file_path });
-      } else {
-        res = await markSafe(activeItem.id);
-        updateItem(activeItem.id, { subfolder: 'SAFE', file_path: res.new_path || activeItem.file_path });
+    requireUnlock('flag', authStatus?.flag_passphrase_required, async () => {
+      try {
+        let res;
+        const isSafe = (activeItem.subfolder || '').toLowerCase().includes('safe');
+        if (isSafe) {
+          res = await unmarkSafe(activeItem.id);
+          updateItem(activeItem.id, { subfolder: '', file_path: res.new_path || activeItem.file_path });
+        } else {
+          res = await markSafe(activeItem.id);
+          updateItem(activeItem.id, { subfolder: 'SAFE', file_path: res.new_path || activeItem.file_path });
+        }
+      } catch (err) {
+        alert(`Error toggling safe mark: ${err.message}`);
       }
-    } catch (err) {
-      alert(`Error toggling safe mark: ${err.message}`);
-    }
+    });
   };
 
   const toggleAppFullscreen = () => {

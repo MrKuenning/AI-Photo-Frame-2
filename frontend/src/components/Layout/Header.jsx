@@ -5,25 +5,21 @@ import { useToggles } from '../../hooks/useToggles';
 import { useMediaFilter } from '../../hooks/useMediaFilter';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import SettingsModal from '../SettingsModal/SettingsModal';
-import PassphraseModal from '../PassphraseModal/PassphraseModal';
 import './Header.css';
 
 export default function Header({ currentPath }) {
-  const { authStatus } = useAuth();
+  const { authStatus, requireUnlock } = useAuth();
   const toggles = useToggles();
   const { filterType, setFilterType, triggerRefresh } = useMediaFilter();
   const { isConnected } = useWebSocket();
   
   const [menuOpen, setMenuOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [showPassphrasePrompt, setShowPassphrasePrompt] = useState(false);
 
   const handleSettingsClick = () => {
-    if (authStatus?.settings_passphrase_required) {
-      setShowPassphrasePrompt('settings');
-    } else {
+    requireUnlock('settings', authStatus?.settings_passphrase_required, () => {
       setShowSettings(true);
-    }
+    });
   };
 
   const toggleFullscreen = () => {
@@ -93,11 +89,9 @@ export default function Header({ currentPath }) {
               className={`btn-pill-toggle ${toggles.safeMode ? 'active' : ''}`}
               title="Hide NSFW content"
               onClick={() => {
-                if (authStatus?.safemode_passphrase_required && toggles.safeMode) {
-                  setShowPassphrasePrompt('safemode');
-                } else {
+                requireUnlock('safemode', authStatus?.safemode_passphrase_required && !toggles.safeMode, () => {
                   toggles.toggleSafeMode();
-                }
+                });
               }}
             >
               Safe Mode
@@ -107,11 +101,9 @@ export default function Header({ currentPath }) {
               className={`btn-pill-toggle ${toggles.contentLock ? 'active' : ''}`}
               title="Hide content in NSFW folders"
               onClick={() => {
-                if (authStatus?.content_lock_passphrase_required && toggles.contentLock) {
-                  setShowPassphrasePrompt('content_lock');
-                } else {
+                requireUnlock('content_lock', authStatus?.content_lock_passphrase_required && toggles.contentLock, () => {
                   toggles.toggleContentLock();
-                }
+                });
               }}
             >
               Folder Lock
@@ -121,11 +113,9 @@ export default function Header({ currentPath }) {
               className={`btn-pill-toggle ${toggles.contentScan ? 'active' : ''}`}
               title="Auto-detect & flag new files"
               onClick={() => {
-                if (authStatus?.content_scan_passphrase_required && toggles.contentScan) {
-                  setShowPassphrasePrompt('content_scan');
-                } else {
+                requireUnlock('content_scan', authStatus?.content_scan_passphrase_required && toggles.contentScan, () => {
                   toggles.toggleServerContentScan();
-                }
+                });
               }}
             >
               Content Scan
@@ -165,27 +155,6 @@ export default function Header({ currentPath }) {
       </header>
 
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
-      
-      {showPassphrasePrompt && (
-        <PassphraseModal 
-          actionName={showPassphrasePrompt}
-          title={showPassphrasePrompt === 'settings' ? 'Settings Locked' : 'Toggle Locked'}
-          description={`Enter the passphrase to unlock ${showPassphrasePrompt.replace('_', ' ')}.`}
-          onClose={() => setShowPassphrasePrompt(false)}
-          onSuccess={() => {
-            const action = showPassphrasePrompt;
-            setShowPassphrasePrompt(false);
-            
-            // Execute the action that was unlocked
-            if (action === 'settings') setShowSettings(true);
-            else if (action === 'safemode') toggles.toggleSafeMode();
-            else if (action === 'content_lock') toggles.toggleContentLock();
-            else if (action === 'content_scan') toggles.toggleServerContentScan();
-            else if (action === 'metadata_extraction') toggles.toggleServerMetadataExt();
-            else if (action === 'hide_archive') toggles.toggleHideArchive();
-          }}
-        />
-      )}
     </>
   );
 }
