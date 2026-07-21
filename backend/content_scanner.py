@@ -129,7 +129,8 @@ def check_nsfw_keywords(metadata: Dict[str, Any]) -> bool:
         return False
     
     # Check prompt
-    prompt = metadata.get('prompt', '').lower()
+    prompt = metadata.get('prompt') or ''
+    prompt = prompt.lower()
     for keyword in NSFW_KEYWORDS:
         if keyword in prompt:
             print(f"🔞 {C_RED}NSFW FLAGGED:{C_RESET} Based on matching keyword: {keyword}")

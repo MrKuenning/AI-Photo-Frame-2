@@ -22,6 +22,7 @@ def init(db_path: str):
     _db_path = db_path
     conn = _get_connection()
     _create_schema(conn)
+    _migrate_schema(conn)
     conn.close()
     # Reset thread-local so next call creates fresh connection
     _local.connection = None
@@ -106,6 +107,25 @@ def _create_schema(conn: sqlite3.Connection):
     conn.commit()
 
 
+def _migrate_schema(conn: sqlite3.Connection):
+    """Run database migrations for existing databases"""
+    try:
+        # Check if top_folder and is_archived exist
+        cursor = conn.execute("PRAGMA table_info(media)")
+        columns = [row['name'] for row in cursor.fetchall()]
+        
+        if 'top_folder' not in columns:
+            conn.execute("ALTER TABLE media ADD COLUMN top_folder TEXT DEFAULT ''")
+            print("📦 DB Migration: Added 'top_folder' column")
+            
+        if 'is_archived' not in columns:
+            conn.execute("ALTER TABLE media ADD COLUMN is_archived INTEGER DEFAULT 0")
+            print("📦 DB Migration: Added 'is_archived' column")
+            
+        conn.commit()
+    except Exception as e:
+        print(f"⚠️ DB Migration failed: {e}")
+
 # ============================================
 # CRUD Operations
 # ============================================
@@ -170,7 +190,7 @@ def update_metadata(
     conn.commit()
 
 
-def update_media_path(old_path: str, new_path: str, filename: str, subfolder: str, is_nsfw: bool = False, is_content_locked: bool = False):
+def update_media_path(old_path: str, new_path: str, filename: str, subfolder: str, top_folder: str, is_nsfw: bool = False, is_content_locked: bool = False, is_archived: bool = False):
     """Update file path and location info without changing ID"""
     conn = _get_connection()
     conn.execute("""
@@ -178,17 +198,19 @@ def update_media_path(old_path: str, new_path: str, filename: str, subfolder: st
             file_path = ?,
             filename = ?,
             subfolder = ?,
+            top_folder = ?,
             is_nsfw = ?,
-            is_content_locked = ?
-        WHERE file_path = ?
-    """, (new_path, filename, subfolder, int(is_nsfw), int(is_content_locked), old_path))
+            is_content_locked = ?,
+            is_archived = ?
+        WHERE file_path = ? COLLATE NOCASE
+    """, (new_path, filename, subfolder, top_folder, int(is_nsfw), int(is_content_locked), int(is_archived), old_path))
     conn.commit()
 
 
 def delete_media(file_path: str):
     """Remove a media record from the database"""
     conn = _get_connection()
-    conn.execute("DELETE FROM media WHERE file_path = ?", (file_path,))
+    conn.execute("DELETE FROM media WHERE file_path = ? COLLATE NOCASE", (file_path,))
     conn.commit()
 
 
@@ -209,7 +231,7 @@ def get_by_id(media_id: int) -> Optional[Dict[str, Any]]:
 def get_by_path(file_path: str) -> Optional[Dict[str, Any]]:
     """Get a single media record by file path"""
     conn = _get_connection()
-    row = conn.execute("SELECT * FROM media WHERE file_path = ?", (file_path,)).fetchone()
+    row = conn.execute("SELECT * FROM media WHERE file_path = ? COLLATE NOCASE", (file_path,)).fetchone()
     return _row_to_dict(row) if row else None
 
 

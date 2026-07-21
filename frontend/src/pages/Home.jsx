@@ -56,16 +56,38 @@ export default function Home() {
     if (refreshKey > 0) refresh();
   }, [refreshKey, refresh]);
 
+  // Keep track of mediaList to avoid missing dependencies in the WebSocket effect
+  const mediaListRef = useRef(mediaList);
+  useEffect(() => {
+    mediaListRef.current = mediaList;
+  }, [mediaList]);
+
   // Handle WebSocket updates
   useEffect(() => {
     if (lastMessage?.type === 'new_image') {
+      const isNewest = mediaListRef.current.length === 0 || lastMessage.data.mod_time >= mediaListRef.current[0].mod_time;
       prependItem(lastMessage.data);
+      if (isNewest) {
+        setSelectedIndex(0); // Force view to new image on Home page
+      }
       clearLastMessage();
     } else if (lastMessage?.type === 'media_deleted') {
       removeItemByFilename(lastMessage.filename);
       clearLastMessage();
+    } else if (lastMessage?.type === 'media_updated') {
+      const updatedItem = lastMessage.data;
+      if (
+        (toggles.safeMode && updatedItem.is_nsfw) || 
+        (toggles.contentLock && updatedItem.is_content_locked) ||
+        (filterType !== 'all' && updatedItem.media_type !== filterType)
+      ) {
+        removeItem(updatedItem.id);
+      } else {
+        updateItem(updatedItem.id, updatedItem);
+      }
+      clearLastMessage();
     }
-  }, [lastMessage, clearLastMessage, prependItem, removeItemByFilename]);
+  }, [lastMessage, clearLastMessage, prependItem, removeItemByFilename, removeItem, updateItem, toggles.safeMode, toggles.contentLock, filterType]);
 
   // Default selection when mediaList loads
   useEffect(() => {
@@ -124,7 +146,8 @@ export default function Home() {
 
   const handleFlagToggle = async () => {
     if (!currentItem) return;
-    requireUnlock('flag', authStatus?.flag_passphrase_required, async () => {
+    const isUnflagging = currentItem.is_content_locked;
+    requireUnlock('flag', authStatus?.flag_passphrase_required && isUnflagging, async () => {
       try {
         let res;
         if (currentItem.is_content_locked) {
@@ -132,7 +155,11 @@ export default function Home() {
           updateItem(currentItem.id, { is_content_locked: false, subfolder: '', file_path: res.new_path || currentItem.file_path });
         } else {
           res = await flagMedia(currentItem.id);
-          updateItem(currentItem.id, { is_content_locked: true, subfolder: 'NSFW', file_path: res.new_path || currentItem.file_path });
+          if (toggles.contentLock) {
+            removeItem(currentItem.id);
+          } else {
+            updateItem(currentItem.id, { is_content_locked: true, subfolder: 'NSFW', file_path: res.new_path || currentItem.file_path });
+          }
         }
       } catch (err) {
         alert(`Error toggling flag: ${err.message}`);

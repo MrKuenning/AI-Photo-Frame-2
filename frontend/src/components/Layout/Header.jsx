@@ -89,7 +89,7 @@ export default function Header({ currentPath }) {
               className={`btn-pill-toggle ${toggles.safeMode ? 'active' : ''}`}
               title="Hide NSFW content"
               onClick={() => {
-                requireUnlock('safemode', authStatus?.safemode_passphrase_required && !toggles.safeMode, () => {
+                requireUnlock('safemode', authStatus?.safemode_passphrase_required && toggles.safeMode, () => {
                   toggles.toggleSafeMode();
                 });
               }}

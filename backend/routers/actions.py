@@ -70,8 +70,9 @@ def delete_media(media_id: int, request: Request):
 @router.post("/flag/{media_id}")
 def flag_nsfw(media_id: int, request: Request):
     """Move a file to NSFW subfolder"""
-    if not has_action_permission(request, 'flag'):
-        raise HTTPException(status_code=403, detail="Permission denied")
+    # Anyone can flag (remove adult content), only admin can unflag
+    # if not has_action_permission(request, 'flag'):
+    #     raise HTTPException(status_code=403, detail="Permission denied")
 
     item = db.get_by_id(media_id)
     if not item:
@@ -89,8 +90,10 @@ def flag_nsfw(media_id: int, request: Request):
             new_path=new_path, 
             filename=os.path.basename(new_path), 
             subfolder='NSFW', 
+            top_folder=dict(item).get('top_folder', ''),
             is_nsfw=True, 
-            is_content_locked=True
+            is_content_locked=True,
+            is_archived=dict(item).get('is_archived', False)
         )
         print(f"🟥 [FLAG] Moved to NSFW: {item['filename']}\n")
         return {"success": True, "message": "File moved to NSFW folder", "new_path": new_path}
@@ -138,8 +141,10 @@ def unflag_nsfw(media_id: int, request: Request):
             new_path=dest_path,
             filename=file_name,
             subfolder=new_subfolder,
+            top_folder=dict(item).get('top_folder', ''),
             is_nsfw=False,
-            is_content_locked=False
+            is_content_locked=False,
+            is_archived=dict(item).get('is_archived', False)
         )
         
         print(f"🟩 [UNFLAG] Moved out of NSFW: {file_name}\n")
@@ -173,8 +178,10 @@ def mark_safe(media_id: int, request: Request):
             new_path=new_path,
             filename=os.path.basename(new_path),
             subfolder='SAFE',
+            top_folder=dict(item).get('top_folder', ''),
             is_nsfw=False,
-            is_content_locked=False
+            is_content_locked=False,
+            is_archived=dict(item).get('is_archived', False)
         )
         print(f"🟩 [MARK SAFE] Moved to SAFE: {item['filename']}\n")
         return {"success": True, "message": "File marked safe", "new_path": new_path}
@@ -222,8 +229,10 @@ def unmark_safe(media_id: int, request: Request):
             new_path=dest_path,
             filename=file_name,
             subfolder=new_subfolder,
+            top_folder=dict(item).get('top_folder', ''),
             is_nsfw=item['is_nsfw'],
-            is_content_locked=item['is_content_locked']
+            is_content_locked=item['is_content_locked'],
+            is_archived=dict(item).get('is_archived', False)
         )
         
         print(f"🟥 [UNMARK SAFE] Moved out of SAFE: {file_name}\n")

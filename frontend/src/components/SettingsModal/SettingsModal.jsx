@@ -259,10 +259,10 @@ export default function SettingsModal({ onClose }) {
                   {[
                     { label: 'Settings Menu', key: 'SETTINGS' },
                     { label: 'Delete Files', key: 'DELETE' },
-                    { label: 'Flag/Unflag Files', key: 'FLAG' },
+                    { label: 'Unflag Files', key: 'FLAG' },
                     { label: 'Archive Files', key: 'ARCHIVE' },
                     { label: 'Content Scan Toggle', key: 'TOGGLE_CONTENT_SCAN' },
-                    { label: 'Content Lock Toggle', key: 'TOGGLE_CONTENT_LOCK' },
+                    { label: 'Folder Lock Toggle', key: 'TOGGLE_CONTENT_LOCK' },
                     { label: 'Safe Mode Toggle', key: 'TOGGLE_SAFEMODE' }
                   ].map(perm => (
                     <div className="permission-row" key={perm.key} style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem', gap: '1rem' }}>

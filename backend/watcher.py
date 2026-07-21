@@ -125,7 +125,7 @@ def _process_new_file(file_path: str, event_type: str = 'new_image'):
         if db_item:
             _ws_broadcast({
                 'type': event_type,
-                'data': db_item
+                'data': dict(db_item)
             })
 
     # Trigger content scan in background if enabled
@@ -228,9 +228,46 @@ class MediaChangeHandler(FileSystemEventHandler):
 
     def on_moved(self, event):
         if not event.is_directory and event.dest_path.lower().endswith(MEDIA_EXTENSIONS):
-            # Remove old record, add new one
-            db.delete_media(event.src_path)
-            _process_new_file(event.dest_path, 'new_image')
+            # Check if old record exists
+            old_item = db.get_by_path(event.src_path)
+            if old_item:
+                info = _classify_file(event.dest_path)
+                if info:
+                    db.update_media_path(
+                        old_path=event.src_path,
+                        new_path=info['file_path'],
+                        filename=info['filename'],
+                        subfolder=info['subfolder'],
+                        top_folder=info['top_folder'],
+                        is_nsfw=info['is_nsfw'],
+                        is_content_locked=info['is_content_locked'],
+                        is_archived=info['is_archived']
+                    )
+                    
+                    log_level = settings.get('LOGGING_LEVEL', 'basic')
+                    if log_level in ('detailed', 'debug'):
+                        print(f"📝 Media moved: {info['filename']}")
+                        
+                    if _ws_broadcast:
+                        db_item = db.get_by_path(info['file_path'])
+                        if db_item:
+                            _ws_broadcast({
+                                'type': 'media_updated',
+                                'data': dict(db_item),
+                                'old_filename': os.path.basename(event.src_path)
+                            })
+            else:
+                # Fallback if old record not in DB
+                db.delete_media(event.src_path)
+                
+                if _ws_broadcast:
+                    _ws_broadcast({
+                        'type': 'media_deleted',
+                        'filename': os.path.basename(event.src_path),
+                    })
+                    time.sleep(0.1) # Prevent React state batching from dropping the first message
+                    
+                _process_new_file(event.dest_path, 'new_image')
 
     def on_deleted(self, event):
         if not event.is_directory and event.src_path.lower().endswith(MEDIA_EXTENSIONS):

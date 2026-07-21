@@ -70,10 +70,33 @@ export default function Gallery() {
   // Handle WebSocket updates
   useEffect(() => {
     if (lastMessage?.type === 'new_image') {
-      prependItem(lastMessage);
+      const newItem = lastMessage.data;
+      const matchesSubfolder = !filters.subfolder || newItem.subfolder === filters.subfolder;
+      const matchesMediaType = !filters.media_type || filters.media_type === 'all' || newItem.media_type === filters.media_type;
+      
+      if (matchesSubfolder && matchesMediaType) {
+        setActiveItemIndex(prev => prev !== -1 ? prev + 1 : -1);
+      }
+      
+      prependItem(newItem);
       clearLastMessage();
     } else if (lastMessage?.type === 'media_deleted') {
       removeItemByFilename(lastMessage.filename);
+      clearLastMessage();
+    } else if (lastMessage?.type === 'media_updated') {
+      const updatedItem = lastMessage.data;
+      const matchesSubfolder = !filters.subfolder || updatedItem.subfolder === filters.subfolder;
+      const matchesMediaType = !filters.media_type || filters.media_type === 'all' || updatedItem.media_type === filters.media_type;
+      
+      if (
+        !matchesSubfolder || !matchesMediaType ||
+        (toggles.safeMode && updatedItem.is_nsfw) || 
+        (toggles.contentLock && updatedItem.is_content_locked)
+      ) {
+        removeItem(updatedItem.id);
+      } else {
+        updateItem(updatedItem.id, updatedItem);
+      }
       clearLastMessage();
     } else if (lastMessage?.type === 'scan_progress') {
       setScanProgress(lastMessage.data);
@@ -82,7 +105,7 @@ export default function Gallery() {
       }
       clearLastMessage();
     }
-  }, [lastMessage, clearLastMessage, prependItem, removeItemByFilename]);
+  }, [lastMessage, clearLastMessage, prependItem, removeItemByFilename, removeItem, updateItem, filters, toggles.safeMode, toggles.contentLock]);
 
   const handleFolderSelect = (folder) => {
     setCurrentFolder(folder);
@@ -141,7 +164,8 @@ export default function Gallery() {
 
   const handleFlagToggle = async () => {
     if (!activeItem) return;
-    requireUnlock('flag', authStatus?.flag_passphrase_required, async () => {
+    const isUnflagging = activeItem.is_content_locked;
+    requireUnlock('flag', authStatus?.flag_passphrase_required && isUnflagging, async () => {
       try {
         let res;
         if (activeItem.is_content_locked) {
@@ -149,7 +173,13 @@ export default function Gallery() {
           updateItem(activeItem.id, { is_content_locked: false, subfolder: '', file_path: res.new_path || activeItem.file_path });
         } else {
           res = await flagMedia(activeItem.id);
-          updateItem(activeItem.id, { is_content_locked: true, subfolder: 'NSFW', file_path: res.new_path || activeItem.file_path });
+          if (toggles.contentLock) {
+            // Close viewer if it's open, since the item is removed
+            setActiveItemIndex(-1);
+            removeItem(activeItem.id);
+          } else {
+            updateItem(activeItem.id, { is_content_locked: true, subfolder: 'NSFW', file_path: res.new_path || activeItem.file_path });
+          }
         }
       } catch (err) {
         alert(`Error toggling flag: ${err.message}`);

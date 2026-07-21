@@ -4,6 +4,32 @@ All notable changes to the AI Photo Frame application will be documented in this
 
 ---
 
+## [2.0.8] - 2026-07-20
+### Fixed
+- **Database Path Mismatches on Windows**<br>
+  Fixed a major bug where Windows file path casing differences caused the SQLite database to lose track of files when they were moved (e.g. by the content scanner), resulting in duplicate "ghost" records and preventing the UI from hiding the moved images. Added `COLLATE NOCASE` to ensure paths match seamlessly.
+- **Websocket Message Dropping**<br>
+  Fixed a React batching issue where back-to-back websocket messages (e.g., deleting an old image then adding a new one) caused the frontend to drop the first instruction.
+- **Auto-Jump to New Media**<br>
+  Restored the frontend logic that automatically jumps your view to the newest image whenever a brand new file is generated and successfully passes your filters.
+- **Content Scanner Metadata Crashes**<br>
+  Added safety checks to the background content scanner so it no longer crashes with a `NoneType` error when trying to extract prompt keywords from an image that lacks metadata.
+
+
+
+## [2.0.7] - 2026-07-20
+### Fixed
+- **Bouncing Images Bug**<br>
+  Fixed an issue where the background content scanner would cause older images to jump to the top of the home page grid when moved. Moved files now maintain their original ID and chronological order, and the UI inserts newly discovered items properly by date rather than always prepending them.
+- **Missing Database Columns**<br>
+  Added an automatic database schema migration script. The server will now automatically append newly tracked fields (like `is_archived` and `top_folder`) to older local databases on startup, preventing "Internal Server Error" crashes when interacting with files.
+
+### Changed
+- **Security Passphrase Requirements**<br>
+  Adjusted the security logic so that users only need a passphrase when making the system *less* secure. For instance, flagging an image as adult content or turning on Safe Mode no longer requires a passphrase, but revealing adult content or turning Safe Mode off still does.
+
+
+
 ## [2.0.6] - 2026-07-16
 ### Changed
 - **View Settings Redesign**<br>

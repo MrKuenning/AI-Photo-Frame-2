@@ -45,8 +45,13 @@ export default function Frame() {
         loadLatest();
       }, 500);
       clearLastMessage();
+    } else if (lastMessage?.type === 'media_updated' && latestItem && lastMessage.data.id === latestItem.id) {
+      setTimeout(() => {
+        loadLatest();
+      }, 500);
+      clearLastMessage();
     }
-  }, [lastMessage, loadLatest, clearLastMessage]);
+  }, [lastMessage, loadLatest, clearLastMessage, latestItem]);
 
   const handleNext = () => {
     if (historyIndex > 0) {
