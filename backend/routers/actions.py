@@ -423,3 +423,13 @@ def scan_folder(body: ScanFolderRequest, request: Request):
 
     threading.Thread(target=run_scan, daemon=True).start()
     return {"success": True, "message": f"Scan started for: {body.subfolder or 'All'}"}
+
+
+@router.post("/rescan-media")
+def rescan_media():
+    """Clean up missing files from database and re-index the image directory"""
+    import watcher
+    image_folder = settings.get('IMAGE_FOLDER')
+    cleaned = db.clean_missing_media()
+    count = watcher.index_folder(image_folder)
+    return {"success": True, "cleaned": cleaned, "total_indexed": count}

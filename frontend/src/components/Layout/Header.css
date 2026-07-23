@@ -162,6 +162,20 @@
 }
 
 /* Responsive */
+@media (max-width: 1024px) {
+  .header {
+    padding: 0 var(--space-md);
+  }
+
+  .header-left {
+    gap: var(--space-md);
+  }
+
+  .header-right {
+    gap: var(--space-md);
+  }
+}
+
 @media (max-width: 900px) {
   .toggles-group {
     display: none;

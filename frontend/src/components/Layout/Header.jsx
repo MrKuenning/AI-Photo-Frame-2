@@ -5,6 +5,7 @@ import { useToggles } from '../../hooks/useToggles';
 import { useMediaFilter } from '../../hooks/useMediaFilter';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import SettingsModal from '../SettingsModal/SettingsModal';
+import { rescanMedia } from '../../utils/api';
 import './Header.css';
 
 export default function Header({ currentPath }) {
@@ -15,6 +16,15 @@ export default function Header({ currentPath }) {
   
   const [menuOpen, setMenuOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+
+  const handleRefreshClick = async () => {
+    try {
+      await rescanMedia();
+    } catch (err) {
+      console.error('Error rescanning media:', err);
+    }
+    triggerRefresh();
+  };
 
   const handleSettingsClick = () => {
     requireUnlock('settings', authStatus?.settings_passphrase_required, () => {
@@ -137,7 +147,7 @@ export default function Header({ currentPath }) {
           </div>
           
           <div className="header-actions">
-            <button className="btn btn-icon btn-ghost" onClick={triggerRefresh} title="Refresh Media">
+            <button className="btn btn-icon btn-ghost" onClick={handleRefreshClick} title="Refresh Media">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
             </button>
             <button className="btn btn-icon btn-ghost" onClick={handleSettingsClick} title="Settings">

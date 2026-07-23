@@ -204,6 +204,7 @@ export default function Home() {
 
   const handleMediaError = (id) => {
     removeItem(id);
+    deleteMedia(id).catch(() => {});
     if (selectedIndex >= mediaList.length - 1) {
       setSelectedIndex(Math.max(0, mediaList.length - 2));
     }
@@ -231,37 +232,38 @@ export default function Home() {
           {/* Thumbnails Grid */}
           <div className={`thumbnail-grid aspect-${toggles.thumbnailAspectRatio}`} style={{ gridTemplateColumns: `repeat(${toggles.homeThumbnailColumns}, 1fr)` }}>
             {mediaList.map((item, idx) => (
-              <div 
-                key={item.id} 
-                className={`thumbnail-container ${idx === selectedIndex ? 'selected' : ''}`}
-                onClick={() => setSelectedIndex(idx)}
-              >
-                {item.media_type === 'video' ? (
-                  <video 
-                    className="thumbnail" 
-                    src={`${getThumbUrl(item.id)}#t=0.1`} 
-                    preload="metadata" 
-                    muted 
-                    playsInline
-                    onError={() => handleMediaError(item.id)}
-                  />
-                ) : (
-                  <img 
-                    className="thumbnail" 
-                    src={getThumbUrl(item.id)} 
-                    alt={item.filename} 
-                    loading="lazy" 
-                    onError={() => handleMediaError(item.id)}
-                  />
-                )}
-                {item.is_flagged && <div className="flag-badge">⚠️</div>}
-                {(item.is_content_locked || item.is_nsfw || (item.subfolder || '').toLowerCase().includes('safe')) ? (
-                  <div className="media-badges">
-                    {item.is_content_locked ? <div className="nsfw-badge">NSFW</div> : null}
-                    {item.is_nsfw ? <div className="safemode-badge">Safe Mode</div> : null}
-                    {(item.subfolder || '').toLowerCase().includes('safe') ? <div className="safe-badge">SAFE</div> : null}
-                  </div>
-                ) : null}
+              <div key={item.id} className="thumbnail-wrapper" style={{ width: '100%' }}>
+                <div 
+                  className={`thumbnail-container ${currentItem?.id === item.id ? 'selected' : ''}`}
+                  onClick={() => setSelectedIndex(idx)}
+                >
+                  {item.media_type === 'video' ? (
+                    <video 
+                      className="thumbnail" 
+                      src={`${getThumbUrl(item.id)}#t=0.1`} 
+                      preload="metadata" 
+                      muted 
+                      playsInline
+                      onError={() => handleMediaError(item.id)}
+                    />
+                  ) : (
+                    <img 
+                      className="thumbnail" 
+                      src={getThumbUrl(item.id)} 
+                      alt={item.filename} 
+                      loading="lazy" 
+                      onError={() => handleMediaError(item.id)}
+                    />
+                  )}
+                  {item.is_flagged && <div className="flag-badge">⚠️</div>}
+                  {(item.is_content_locked || item.is_nsfw || (item.subfolder || '').toLowerCase().includes('safe')) ? (
+                    <div className="media-badges">
+                      {item.is_content_locked ? <div className="nsfw-badge">NSFW</div> : null}
+                      {item.is_nsfw ? <div className="safemode-badge">Safe Mode</div> : null}
+                      {(item.subfolder || '').toLowerCase().includes('safe') ? <div className="safe-badge">SAFE</div> : null}
+                    </div>
+                  ) : null}
+                </div>
               </div>
             ))}
             

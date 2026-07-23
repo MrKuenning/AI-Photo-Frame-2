@@ -135,6 +135,10 @@ export function scanFolder(subfolder = '') {
   });
 }
 
+export function rescanMedia() {
+  return request('/actions/rescan-media', { method: 'POST' });
+}
+
 // ============================================
 // Settings API
 // ============================================

@@ -136,6 +136,8 @@ export default function MediaGrid({
                     className={`media-thumb ${isActive ? 'active' : ''}`}
                     onClick={() => onItemClick(item, startIndex + idx)}
                   >
+                    {/* Bulletproof aspect-ratio spacer: GIF has intrinsic pixel dimensions unlike SVG */}
+                    <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" style={{ position: 'static', display: 'block', width: '100%', height: 'auto', visibility: 'hidden' }} alt="" />
                     {item.media_type === 'video' ? (
                       <video 
                         src={`${getThumbUrl(item.id)}#t=0.1`} 

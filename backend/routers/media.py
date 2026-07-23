@@ -137,6 +137,7 @@ def serve_media_file(media_id: int):
 
     file_path = item['file_path']
     if not os.path.exists(file_path):
+        db.delete_by_id(media_id)
         raise HTTPException(status_code=404, detail="File not found on disk")
 
     # Determine MIME type
@@ -178,6 +179,7 @@ def serve_thumbnail(
 
     file_path = item['file_path']
     if not os.path.exists(file_path):
+        db.delete_by_id(media_id)
         raise HTTPException(status_code=404, detail="File not found on disk")
 
     # For videos, just serve the original (let the browser handle it)

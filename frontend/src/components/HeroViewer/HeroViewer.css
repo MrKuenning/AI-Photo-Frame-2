@@ -120,6 +120,14 @@
   opacity: 1;
 }
 
+/* Touch device support (iPads, tablets, phones) */
+@media (hover: none), (pointer: coarse) {
+  .nav-btn,
+  .zoom-controls {
+    opacity: 0.85;
+  }
+}
+
 .zoom-controls .btn-icon {
   background: transparent;
   border: none;

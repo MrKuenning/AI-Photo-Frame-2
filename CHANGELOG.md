@@ -2,6 +2,36 @@
 
 All notable changes to the AI Photo Frame application will be documented in this file.
 
+## [2.0.17] - 2026-07-23
+### Added
+- **Configurable Dev Server Port**<br>
+  Updated `vite.config.js` to set the default frontend dev server port to `5001` (avoiding default 5173/5174 port switching).
+- **Automatic Database Cleanup & Rescan**<br>
+  - Integrated `/api/actions/rescan-media` into the **Refresh Media** button to automatically purge database records for files deleted or moved on disk outside the application.
+  - Added automatic database purging on 404 file and thumbnail requests so missing media items are immediately cleaned up.
+  - Added automatic database audit on server startup to remove stale records for deleted files.
+  - Added automatic silent error handling in the frontend to remove broken image cards when a thumbnail fails to render.
+
+### Fixed
+- **Home Page Thumbnail Grid Cross-Browser Sizing**<br>
+  Resolved a CSS Grid auto-track height collapse issue in Chrome and Safari by wrapping `.thumbnail-container` inside a `.thumbnail-wrapper` element. Grid items now maintain proper square aspect ratios on both Desktop PC (Chrome/Edge/Firefox) and iPad (Safari).
+
+---
+
+## [2.0.10] - 2026-07-23
+### Fixed
+- **Chrome Cyclic Height Percentage Resolution Fix**<br>
+  Fixed an issue in Chrome Desktop where in-flow `<img>` elements with `height: 100%` inside an `aspect-ratio: 1 / 1` grid container resolved height against intrinsic image line-height (~25px), causing grid rows to collapse to 25px tall sliced cards. Restored `position: absolute; top: 0; left: 0; width: 100%; height: 100%` on thumbnails without `::before` pseudo-element conflicts, guaranteeing perfect square grid cards across Chrome, Safari, and Firefox.
+
+---
+
+## [2.0.9] - 2026-07-23
+### Fixed
+- **Cross-Browser & iPad Thumbnail Overlap**<br>
+  Fixed an issue where thumbnails overlapped on iPad (Safari) and Desktop PC (Chrome). Implemented an in-flow `::before` pseudo-element with `aspect-ratio: 1 / 1` and `padding-bottom: 100%` on thumbnail containers to guarantee non-zero grid row track sizing across all browser layout engines.
+- **iPad & Tablet Responsive Layout**<br>
+  Improved header, sidebar, hero controls, and touch interface controls for iPad/tablet viewports (up to 1024px) and touch devices.
+
 ---
 
 ## [2.0.8] - 2026-07-20

@@ -290,6 +290,12 @@ def index_folder(image_folder: str, progress_callback: Optional[Callable] = None
     """
     print(f"🗂️ [INDEX] Starting full index of {image_folder}...")
     start_time = time.time()
+    
+    # First clean up any files that were deleted on disk while offline
+    cleaned = db.clean_missing_media()
+    if cleaned > 0:
+        print(f"🧹 [INDEX] Cleaned up {cleaned} missing files from database")
+
     count = 0
     errors = 0
 

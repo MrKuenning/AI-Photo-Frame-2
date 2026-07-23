@@ -471,6 +471,23 @@ def clear_all():
     conn.commit()
 
 
+def clean_missing_media() -> int:
+    """Check all media records in DB and delete any whose file no longer exists on disk"""
+    conn = _get_connection()
+    rows = conn.execute("SELECT id, file_path, filename FROM media").fetchall()
+    deleted_ids = []
+    for row in rows:
+        if not os.path.exists(row['file_path']):
+            deleted_ids.append((row['id'],))
+            print(f"🧹 [CLEANUP] Missing file found, removing DB entry: {row['filename']}")
+
+    if deleted_ids:
+        conn.executemany("DELETE FROM media WHERE id = ?", deleted_ids)
+        conn.commit()
+
+    return len(deleted_ids)
+
+
 # ============================================
 # Helpers
 # ============================================
