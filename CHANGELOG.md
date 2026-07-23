@@ -2,6 +2,13 @@
 
 All notable changes to the AI Photo Frame application will be documented in this file.
 
+## [2.0.18] - 2026-07-23
+### Added
+- **Custom Application Favicon**<br>
+  Added `favicon.ico` to `frontend/public/` and updated `index.html` link tag to reference the custom favicon asset.
+
+---
+
 ## [2.0.17] - 2026-07-23
 ### Added
 - **Configurable Dev Server Port**<br>
