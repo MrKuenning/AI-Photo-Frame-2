@@ -49,6 +49,9 @@ def _classify_file(file_path: str) -> dict:
     ext = os.path.splitext(filename)[1].lower()
 
     # Determine media type
+    if '_tmp' in filename.lower() or '_temp' in filename.lower():
+        return None
+        
     if ext in IMAGE_EXTENSIONS:
         media_type = 'image'
     elif ext in VIDEO_EXTENSIONS:
@@ -108,8 +111,16 @@ def _process_new_file(file_path: str, event_type: str = 'new_image'):
     if not info:
         return
 
+    # Check if this is a brand new file to the database
+    is_new = db.get_by_path(info['file_path']) is None
+
     # Upsert into database
     db.upsert_media(**info)
+
+    # Force new_image event if it wasn't in the DB before
+    # This catches cases where on_created fails but on_modified succeeds
+    if is_new:
+        event_type = 'new_image'
 
     log_level = settings.get('LOGGING_LEVEL', 'basic')
 
@@ -147,19 +158,29 @@ def _process_new_file(file_path: str, event_type: str = 'new_image'):
                 daemon=True
             ).start()
 
-    # Extract metadata in background
-    threading.Thread(
-        target=_extract_metadata_for_file,
-        args=(file_path,),
-        daemon=True
-    ).start()
+
 
 
 def _extract_metadata_for_file(file_path: str):
     """Extract and store metadata for a single file"""
     try:
-        # Small delay to ensure file is fully written
-        time.sleep(0.3)
+        # Check if file is locked (still being written/moved by an AI tool)
+        retries = 0
+        while retries < 5:
+            try:
+                os.rename(file_path, file_path)
+                # SUCCESS: The file is unlocked from data writing.
+                # However, tools like shutil.copy2 or Windows Explorer apply metadata (timestamps) 
+                # *after* closing the file. We MUST wait a few seconds before reading it, 
+                # otherwise ffprobe will lock it and cause the AI tool to crash and delete the file.
+                time.sleep(3.0)
+                break
+            except OSError:
+                time.sleep(1)
+                retries += 1
+        else:
+            # File is still locked after retries. Abort for now.
+            return
 
         if not os.path.exists(file_path):
             return

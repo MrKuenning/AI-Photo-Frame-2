@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useMediaList } from '../hooks/useMediaList';
 import { useToggles } from '../hooks/useToggles';
 import { useWebSocket } from '../hooks/useWebSocket';
@@ -62,6 +62,12 @@ export default function Gallery() {
     }
   }, [items.length, activeItemIndex]);
 
+  // Keep track of items to avoid missing dependencies in the WebSocket effect
+  const itemsRef = useRef(items);
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
+
   // Sync refreshKey
   useEffect(() => {
     if (refreshKey > 0) refresh();
@@ -75,7 +81,21 @@ export default function Gallery() {
       const matchesMediaType = !filters.media_type || filters.media_type === 'all' || newItem.media_type === filters.media_type;
       
       if (matchesSubfolder && matchesMediaType) {
-        setActiveItemIndex(prev => prev !== -1 ? prev + 1 : -1);
+        setActiveItemIndex(prev => {
+          if (prev === -1) return -1;
+          
+          const isNewest = itemsRef.current.length === 0 || newItem.mod_time > itemsRef.current[0].mod_time;
+          // If viewing the absolute newest item and a newer item comes in, auto-load it
+          if (isNewest && prev === 0) return 0;
+          
+          // Otherwise, find where it will be inserted and shift the index if necessary
+          const insertIndex = itemsRef.current.findIndex(item => newItem.mod_time >= item.mod_time);
+          if (insertIndex !== -1 && insertIndex <= prev) {
+            return prev + 1;
+          }
+          
+          return prev;
+        });
       }
       
       prependItem(newItem);

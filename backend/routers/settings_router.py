@@ -64,6 +64,7 @@ def get_settings(request: Request):
         "METADATA_EXTRACTION": settings.get('METADATA_EXTRACTION', True),
         "CONTENT_LOCK_DEFAULT": settings.get('CONTENT_LOCK_DEFAULT', False),
         "HIDE_ARCHIVE": settings.get('HIDE_ARCHIVE', False),
+        "SCAN_VIDEO_FILES": settings.get('SCAN_VIDEO_FILES', True),
         "THUMBNAIL_ASPECT_RATIO": settings.get('THUMBNAIL_ASPECT_RATIO', 'square'),
         "HOME_THUMBNAIL_COLUMNS_DEFAULT": settings.get('HOME_THUMBNAIL_COLUMNS_DEFAULT', 3),
         "GALLERY_THUMBNAIL_SIZE_DEFAULT": settings.get('GALLERY_THUMBNAIL_SIZE_DEFAULT', 3),
@@ -94,13 +95,17 @@ def update_settings(body: SettingsUpdateRequest, request: Request):
         settings.update_from_dict(new_settings)
         
         try:
-            from main import update_watcher_config
-            update_watcher_config(
-                scan_enabled=settings.get('CONTENT_SCAN_DEFAULT', False),
-                logging_level=settings.get('LOGGING_LEVEL', 'basic')
+            import content_scanner
+            content_scanner.set_config(
+                settings.get('NSFW_KEYWORDS', []),
+                settings.get('NUDITY_THRESHOLD', 0.5),
+                settings.get('NSFW_LABELS', []),
+                settings.get('SAFE_FOLDERS', ['SAFE']),
+                logging_level=settings.get('LOGGING_LEVEL', 'basic'),
+                scan_video_files=settings.get('SCAN_VIDEO_FILES', True)
             )
-        except ImportError:
-            pass
+        except Exception as ex:
+            print(f"[Settings] Error updating content scanner config: {ex}")
 
         return {"success": True, "message": "Settings updated"}
     except Exception as e:

@@ -275,7 +275,7 @@ def save_frame(body: SaveFrameRequest):
                 continue
 
         next_num = max_num + 1
-        new_filename = f"{base_name}-{next_num:05d}.jpg"
+        new_filename = f"{base_name}-{next_num:03d}.jpg"
         new_path = os.path.join(video_dir, new_filename)
 
         # Decode and save
@@ -409,7 +409,12 @@ def scan_folder(body: ScanFolderRequest, request: Request):
         folder_name = os.path.basename(folder_path) if folder_path != image_folder else 'All'
         print(f"\n{C_CYAN}[Manual Scan Started on {folder_name}]{C_RESET}")
         
-        skip_archive = not body.subfolder
+        # Only scan archive/safe folders if the user explicitly started the scan from inside one of them
+        skip_archive = True
+        if body.subfolder:
+            if content_scanner.is_in_safe_folder(body.subfolder) or content_scanner.is_in_archive_folder(body.subfolder):
+                skip_archive = False
+                
         for progress in content_scanner.scan_folder_batch(
             folder_path, batch_size=20,
             get_metadata_func=lambda fp: extract_embedded_metadata(fp),

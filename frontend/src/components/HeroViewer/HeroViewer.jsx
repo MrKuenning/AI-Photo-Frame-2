@@ -31,7 +31,7 @@ export default function HeroViewer({ item, onNext, onPrev, onClose }) {
   if (!item) return null;
 
   const isVideo = item.media_type === 'video';
-  const url = getMediaFileUrl(item.id);
+  const url = getMediaFileUrl(item.id, item.mod_time);
 
   return (
     <div className="hero-viewer-container" ref={containerRef} tabIndex="-1">

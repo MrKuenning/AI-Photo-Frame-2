@@ -127,3 +127,25 @@
   font-size: 1.3rem;
   margin-left: var(--space-xs);
 }
+
+@media (max-width: 768px) {
+  .video-controls {
+    flex-wrap: wrap;
+    padding: var(--space-xs) var(--space-sm);
+  }
+  
+  .progress-bar-container {
+    flex: 0 0 100%;
+    order: -1;
+    margin-bottom: var(--space-xs);
+  }
+  
+  .volume-control {
+    display: none; /* Hide volume slider on mobile to save space */
+  }
+  
+  .time-display {
+    min-width: auto;
+    font-size: 0.7rem;
+  }
+}

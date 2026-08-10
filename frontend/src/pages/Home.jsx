@@ -65,11 +65,20 @@ export default function Home() {
   // Handle WebSocket updates
   useEffect(() => {
     if (lastMessage?.type === 'new_image') {
-      const isNewest = mediaListRef.current.length === 0 || lastMessage.data.mod_time >= mediaListRef.current[0].mod_time;
+      const isNewest = mediaListRef.current.length === 0 || lastMessage.data.mod_time > mediaListRef.current[0].mod_time;
+      
+      setSelectedIndex(prev => {
+        if (isNewest) return 0;
+        if (prev !== -1) {
+          const insertIndex = mediaListRef.current.findIndex(item => lastMessage.data.mod_time >= item.mod_time);
+          if (insertIndex !== -1 && insertIndex <= prev) {
+            return prev + 1;
+          }
+        }
+        return prev;
+      });
+      
       prependItem(lastMessage.data);
-      if (isNewest) {
-        setSelectedIndex(0); // Force view to new image on Home page
-      }
       clearLastMessage();
     } else if (lastMessage?.type === 'media_deleted') {
       removeItemByFilename(lastMessage.filename);
@@ -240,16 +249,15 @@ export default function Home() {
                   {item.media_type === 'video' ? (
                     <video 
                       className="thumbnail" 
-                      src={`${getThumbUrl(item.id)}#t=0.1`} 
+                      src={`${getThumbUrl(item.id, 300, 300, item.mod_time)}#t=0.1`} 
                       preload="metadata" 
                       muted 
                       playsInline
-                      onError={() => handleMediaError(item.id)}
                     />
                   ) : (
                     <img 
                       className="thumbnail" 
-                      src={getThumbUrl(item.id)} 
+                      src={getThumbUrl(item.id, 300, 300, item.mod_time)} 
                       alt={item.filename} 
                       loading="lazy" 
                       onError={() => handleMediaError(item.id)}

@@ -311,18 +311,31 @@ export default function SettingsModal({ onClose }) {
                     <small>Comma-separated folder names that skip further content scanning - In addition to SAFE</small>
                   </div>
 
-                  <div className="form-row mt-4 align-items-end">
-                    <div className="form-group half mb-0">
-                      <label className="section-subtitle">Scan Offset</label>
-                      <input type="number" name="CONTENT_SCAN_OFFSET" className="input mt-2" value={settings.CONTENT_SCAN_OFFSET || 0} onChange={handleChange} />
-                      <small>Skip N newest images before scanning</small>
+                    <div className="form-row mt-4 align-items-end">
+                      <div className="form-group half mb-0">
+                        <label className="section-subtitle">Scan Offset</label>
+                        <input type="number" name="CONTENT_SCAN_OFFSET" className="input mt-2" value={settings.CONTENT_SCAN_OFFSET || 0} onChange={handleChange} />
+                        <small>Skip N newest images before scanning</small>
+                      </div>
+                      <div className="form-group half mb-0">
+                        <label className="section-subtitle">Nudity Threshold</label>
+                        <input type="range" name="NUDITY_THRESHOLD" className="mt-2 w-100 slider-blue" min="0" max="1" step="0.05" value={settings.NUDITY_THRESHOLD || 0.5} onChange={handleChange} />
+                        <small>Lower = more sensitive ({settings.NUDITY_THRESHOLD || 0.5})</small>
+                      </div>
                     </div>
-                    <div className="form-group half mb-0">
-                      <label className="section-subtitle">Nudity Threshold</label>
-                      <input type="range" name="NUDITY_THRESHOLD" className="mt-2 w-100 slider-blue" min="0" max="1" step="0.05" value={settings.NUDITY_THRESHOLD || 0.5} onChange={handleChange} />
-                      <small>Lower = more sensitive ({settings.NUDITY_THRESHOLD || 0.5})</small>
+
+                    <div className="form-group mt-4">
+                      <label className="checkbox-label">
+                        <input 
+                          type="checkbox" 
+                          name="SCAN_VIDEO_FILES"
+                          checked={settings.SCAN_VIDEO_FILES ?? true} 
+                          onChange={handleChange}
+                        />
+                        <span>Scan Video Files</span>
+                      </label>
+                      <small className="d-block mt-1">If disabled, completely ignores content scanning for video files to avoid locking them.</small>
                     </div>
-                  </div>
 
                   <div className="form-group mt-4">
                     <label className="section-subtitle">NSFW Labels (NudeNet)</label>

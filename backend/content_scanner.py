@@ -69,6 +69,7 @@ def _cleanup_temp_file(temp_path: str, original_path: str):
 NSFW_KEYWORDS = []
 NUDITY_THRESHOLD = 0.5  # Confidence threshold for nudity detection
 SAFE_FOLDERS = ['SAFE']  # Folders that mark content as safe (skip scanning)
+SCAN_VIDEO_FILES = True  # Toggle for video file scanning
 
 # Body parts that indicate NSFW content (configurable via set_config)
 NSFW_LABELS = [
@@ -80,9 +81,10 @@ NSFW_LABELS = [
 ]
 
 
-def set_config(keywords: List[str], threshold: float = 0.5, labels: List[str] = None, safe_folders: List[str] = None, logging_level: str = 'basic'):
+def set_config(keywords: List[str], threshold: float = 0.5, labels: List[str] = None, safe_folders: List[str] = None, logging_level: str = 'basic', scan_video_files: bool = True):
     """Set configuration from main app"""
-    global NSFW_KEYWORDS, NUDITY_THRESHOLD, NSFW_LABELS, SAFE_FOLDERS
+    global NSFW_KEYWORDS, NUDITY_THRESHOLD, NSFW_LABELS, SAFE_FOLDERS, SCAN_VIDEO_FILES
+    SCAN_VIDEO_FILES = scan_video_files
     NSFW_KEYWORDS = [kw.lower().strip() for kw in keywords]
     NUDITY_THRESHOLD = threshold
     if labels:
@@ -465,6 +467,12 @@ def should_skip_scanning(file_path: str, skip_archive: bool = False) -> bool:
         return True
     if skip_archive and is_in_archive_folder(file_path):
         return True
+        
+    video_extensions = ('.mp4', '.webm', '.mov', '.avi', '.mkv')
+    ext = os.path.splitext(file_path)[1].lower()
+    if not SCAN_VIDEO_FILES and ext in video_extensions:
+        return True
+        
     return False
 
 

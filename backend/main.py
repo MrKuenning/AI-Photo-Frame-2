@@ -142,7 +142,8 @@ async def lifespan(app: FastAPI):
         settings.get('NUDITY_THRESHOLD', 0.5),
         settings.get('NSFW_LABELS', []),
         settings.get('SAFE_FOLDERS', ['SAFE']),
-        logging_level=settings.get('LOGGING_LEVEL', 'basic')
+        logging_level=settings.get('LOGGING_LEVEL', 'basic'),
+        scan_video_files=settings.get('SCAN_VIDEO_FILES', True)
     )
 
     # Index the image folder
@@ -175,6 +176,23 @@ async def lifespan(app: FastAPI):
             if not content_scanner.should_skip_scanning(file_path):
                 if not _is_archived(file_path):
                     try:
+                        # Wait up to 60 seconds for the file to unlock (in case AI tool is still writing/moving it)
+                        retries = 0
+                        while retries < 60:
+                            try:
+                                os.rename(file_path, file_path)
+                                # File is unlocked from data writing!
+                                # Wait 3 seconds for AI tools/Windows to finish applying metadata/timestamps
+                                # before we lock it with ffmpeg.
+                                time.sleep(3.0)
+                                break
+                            except OSError:
+                                time.sleep(1)
+                                retries += 1
+                        else:
+                            print(f"[ContentScanner] Timeout waiting for file to unlock: {file_path}")
+                            return
+
                         from metadata_extractor import extract_embedded_metadata
                         metadata = extract_embedded_metadata(file_path)
                         if content_scanner.scan_single_file(file_path, metadata):

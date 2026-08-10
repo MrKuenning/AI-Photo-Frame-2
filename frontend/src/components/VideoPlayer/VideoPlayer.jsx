@@ -16,8 +16,8 @@ export default function VideoPlayer({ url, item, onLoad }) {
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [wasPlayingBeforeScrub, setWasPlayingBeforeScrub] = useState(false);
 
-  // Assuming 30fps for frame skipping logic
-  const FPS = 30;
+  // AI videos are often 8-12fps. Using 10fps (0.1s) ensures Android registers the seek and repaints.
+  const FPS = 10;
   const FRAME_TIME = 1 / FPS;
 
   useEffect(() => {

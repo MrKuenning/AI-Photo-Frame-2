@@ -51,6 +51,7 @@ DEFAULTS = {
     'TOGGLE_SAFEMODE_PASSPHRASE': '',
     # Content scan settings
     'CONTENT_SCAN_OFFSET': 0,
+    'SCAN_VIDEO_FILES': True,
 }
 
 
@@ -139,7 +140,7 @@ class Config:
         # Boolean values
         bool_keys = [
             'SAFE_MODE_DEFAULT', 'CONTENT_SCAN_DEFAULT', 'METADATA_EXTRACTION',
-            'CONTENT_LOCK_DEFAULT', 'HIDE_ARCHIVE',
+            'CONTENT_LOCK_DEFAULT', 'HIDE_ARCHIVE', 'SCAN_VIDEO_FILES',
         ]
         for key in bool_keys:
             if key.lower() in section:

@@ -140,14 +140,14 @@ export default function MediaGrid({
                     <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" style={{ position: 'static', display: 'block', width: '100%', height: 'auto', visibility: 'hidden' }} alt="" />
                     {item.media_type === 'video' ? (
                       <video 
-                        src={`${getThumbUrl(item.id)}#t=0.1`} 
+                        src={`${getThumbUrl(item.id, 300, 300, item.mod_time)}#t=0.1`} 
                         preload="metadata" 
                         muted 
                         playsInline
                       />
                     ) : (
                       <img 
-                        src={getThumbUrl(item.id)} 
+                        src={getThumbUrl(item.id, 300, 300, item.mod_time)} 
                         alt={item.filename} 
                         loading="lazy" 
                       />

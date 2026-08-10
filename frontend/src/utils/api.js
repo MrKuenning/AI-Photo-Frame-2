@@ -53,12 +53,14 @@ export function fetchMetadata(mediaId) {
   return request(`/media/${mediaId}/metadata`);
 }
 
-export function getMediaFileUrl(mediaId) {
-  return `${API_BASE}/media/${mediaId}/file`;
+export function getMediaFileUrl(mediaId, modTime = null) {
+  const url = `${API_BASE}/media/${mediaId}/file`;
+  return modTime ? `${url}?v=${modTime}` : url;
 }
 
-export function getThumbUrl(mediaId, width = 300, height = 300) {
-  return `${API_BASE}/media/${mediaId}/thumb?width=${width}&height=${height}`;
+export function getThumbUrl(mediaId, width = 300, height = 300, modTime = null) {
+  const url = `${API_BASE}/media/${mediaId}/thumb?width=${width}&height=${height}`;
+  return modTime ? `${url}&v=${modTime}` : url;
 }
 
 // ============================================

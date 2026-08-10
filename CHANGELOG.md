@@ -2,6 +2,32 @@
 
 All notable changes to the AI Photo Frame application will be documented in this file.
 
+## [2.0.20] - 2026-08-10
+### Added
+- **Scan Video Files Setting**<br>
+  Added a new setting to toggle scanning of video files. If disabled, video files are completely ignored by the content scanner to avoid locking them while external tools are writing to them.
+
+### Fixed
+- **Temporary File & File Locking Issues**<br>
+  Fixed an issue where temporarily written files (e.g., `_tmp` or `_temp`) were being mistakenly scanned and locked. Improved file lock checking to patiently wait until tools finish writing the file before `ffprobe` attempts to extract metadata.
+- **Duplicate Records Bug**<br>
+  Ensured newly written or moved files correctly trigger a new image event, preventing duplicate references in the database.
+
+---
+
+## [2.0.19] - 2026-08-06
+### Fixed
+- **Mobile Video Player Layout**<br>
+  Fixed the video progress bar appearing squished on mobile devices by adjusting the CSS flex layout to force the progress bar to its own full-width line above the controls.
+- **Android Frame Stepping**<br>
+  Fixed an issue on Android devices where the frame forward/backward buttons did not work. Increased the frame step delta from 33ms (1/30s) to 100ms (1/10s) to ensure Android's video decoder accurately registers the seek and repaints the frame, avoiding its keyframe-snapping optimization.
+- **File Locking Race Condition (Windows)**<br>
+  Fixed a severe issue where newly generated videos would disappear and be left stranded in the AI tool's (e.g. ComfyUI) temporary folder. The UI server's background scanning (`ffprobe`/`ffmpeg`) was eagerly locking newly created files on Windows, causing AI tools to crash with `PermissionError` when trying to write/move video data. Added a robust lock-checking loop (`os.rename`) to ensure the server patiently waits for the AI tool to finish writing before scanning.
+- **Video Caching Bug**<br>
+  Fixed a bug where overwritten video files required a manual browser refresh to display. Appended a dynamic cache-busting parameter (`?v=[mod_time]`) to thumbnail and hero video URLs.
+
+---
+
 ## [2.0.18] - 2026-07-23
 ### Added
 - **Custom Application Favicon**<br>
