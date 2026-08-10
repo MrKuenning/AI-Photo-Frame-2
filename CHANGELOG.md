@@ -2,6 +2,13 @@
 
 All notable changes to the AI Photo Frame application will be documented in this file.
 
+## [2.0.21] - 2026-08-10
+### Added
+- **Persisted Video Mute State**<br>
+  Video playback logic has been modified to persist the mute state across different video clips. If a user mutes the current video, subsequent videos remain muted by default.
+
+---
+
 ## [2.0.20] - 2026-08-10
 ### Added
 - **Scan Video Files Setting**<br>

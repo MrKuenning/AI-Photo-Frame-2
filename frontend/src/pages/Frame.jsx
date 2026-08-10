@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useToggles } from '../hooks/useToggles';
@@ -12,6 +12,13 @@ export default function Frame() {
   const [history, setHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [showControls, setShowControls] = useState(false);
+  const [isMuted, setIsMuted] = useState(() => {
+    return localStorage.getItem('media_muted') === 'true';
+  });
+  const [volume, setVolume] = useState(() => {
+    const saved = localStorage.getItem('media_volume');
+    return saved !== null ? parseFloat(saved) : 1;
+  });
   const { isConnected, lastMessage, clearLastMessage } = useWebSocket();
   const toggles = useToggles();
 
@@ -80,6 +87,23 @@ export default function Frame() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   });
 
+  // Listen to cross-tab changes for volume/mute
+  useEffect(() => {
+    const handleStorage = (e) => {
+      if (e.key === 'media_muted') setIsMuted(e.newValue === 'true');
+      if (e.key === 'media_volume') setVolume(parseFloat(e.newValue));
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
+  const videoRef = useRef(null);
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.volume = volume;
+    }
+  }, [volume, latestItem]);
+
   // Action Handlers
   const handleFullscreen = (e) => {
     e.stopPropagation();
@@ -136,7 +160,7 @@ export default function Frame() {
       {/* Main Content */}
       <div className="frame-content">
         {isVideo ? (
-          <video src={url} autoPlay loop playsInline className="frame-media" />
+          <video ref={videoRef} src={url} autoPlay loop playsInline muted={isMuted} className="frame-media" />
         ) : (
           <img src={url} alt={latestItem.filename} className="frame-media" />
         )}

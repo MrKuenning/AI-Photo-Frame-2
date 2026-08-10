@@ -8,8 +8,13 @@ export default function VideoPlayer({ url, item, onLoad }) {
   const progressBarRef = useRef(null);
 
   const [isPlaying, setIsPlaying] = useState(true);
-  const [volume, setVolume] = useState(1);
-  const [isMuted, setIsMuted] = useState(false);
+  const [volume, setVolume] = useState(() => {
+    const saved = localStorage.getItem('media_volume');
+    return saved !== null ? parseFloat(saved) : 1;
+  });
+  const [isMuted, setIsMuted] = useState(() => {
+    return localStorage.getItem('media_muted') === 'true';
+  });
   const [progress, setProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -51,6 +56,13 @@ export default function VideoPlayer({ url, item, onLoad }) {
       video.removeEventListener('pause', onPause);
     };
   }, [onLoad, isScrubbing]);
+
+  // Apply volume when video mounts or url changes
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.volume = volume;
+    }
+  }, [volume, url]);
 
   const togglePlay = (e) => {
     if (e) e.stopPropagation();
@@ -130,21 +142,27 @@ export default function VideoPlayer({ url, item, onLoad }) {
     e.stopPropagation();
     const val = parseFloat(e.target.value);
     setVolume(val);
+    localStorage.setItem('media_volume', val.toString());
     if (videoRef.current) {
       videoRef.current.volume = val;
     }
-    setIsMuted(val === 0);
+    const newMuted = val === 0;
+    setIsMuted(newMuted);
+    localStorage.setItem('media_muted', newMuted.toString());
   };
 
   const toggleMute = (e) => {
     e.stopPropagation();
     const video = videoRef.current;
     if (video) {
-      video.muted = !video.muted;
-      setIsMuted(video.muted);
-      if (!video.muted && volume === 0) {
+      const newMuted = !video.muted;
+      video.muted = newMuted;
+      setIsMuted(newMuted);
+      localStorage.setItem('media_muted', newMuted.toString());
+      if (!newMuted && volume === 0) {
         setVolume(1);
         video.volume = 1;
+        localStorage.setItem('media_volume', '1');
       }
     }
   };
@@ -207,6 +225,7 @@ export default function VideoPlayer({ url, item, onLoad }) {
         autoPlay
         loop
         playsInline
+        muted={isMuted}
       />
       
       <div className="video-controls glass" onClick={e => e.stopPropagation()}>
