@@ -260,19 +260,22 @@ def save_frame(body: SaveFrameRequest):
         video_dir = os.path.dirname(file_path)
         base_name = item['filename']
 
-        # Find next available frame number
-        pattern = os.path.join(video_dir, f"{base_name}-*.jpg")
-        existing_frames = glob.glob(pattern)
-
+        # Find next available frame number without using glob (which breaks on '[' and ']')
         max_num = 0
-        for frame_path in existing_frames:
-            try:
-                frame_name = os.path.basename(frame_path)
-                num_str = frame_name.replace(f"{base_name}-", "").replace(".jpg", "")
-                num = int(num_str)
-                max_num = max(max_num, num)
-            except ValueError:
-                continue
+        prefix = f"{base_name}-"
+        suffix = ".jpg"
+        
+        try:
+            for frame_name in os.listdir(video_dir):
+                if frame_name.startswith(prefix) and frame_name.endswith(suffix):
+                    try:
+                        num_str = frame_name[len(prefix):-len(suffix)]
+                        num = int(num_str)
+                        max_num = max(max_num, num)
+                    except ValueError:
+                        continue
+        except OSError:
+            pass
 
         next_num = max_num + 1
         new_filename = f"{base_name}-{next_num:03d}.jpg"

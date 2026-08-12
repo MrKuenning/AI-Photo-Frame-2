@@ -108,6 +108,35 @@
   border: 1px solid var(--border-subtle);
 }
 
+.pill-segmented-control {
+  display: flex;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+.pill-segment {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  padding: 4px 16px;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.pill-segment:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.pill-segment.active {
+  background: var(--accent-muted);
+  color: var(--accent);
+}
+
 .header-right {
   display: flex;
   align-items: center;

@@ -2,6 +2,29 @@
 
 All notable changes to the AI Photo Frame application will be documented in this file.
 
+## [2.0.22] - 2026-08-12
+### Added
+- **Safe Only Mode**<br>
+  Added a new filtering mode that, when enabled, explicitly hides all media unless it has been marked as safe and moved to a SAFE folder.
+
+### Changed
+- **Keyword Filter Rename**<br>
+  Renamed the original "Safe Mode" feature to "Keyword Filter" to more accurately reflect its function (filtering by NSFW keywords) and to differentiate it from the new Safe Only mode.
+- **Settings UI Optimization**<br>
+  Split the Settings modal into separate "Filtering" and "Scanning" tabs for better organization, and improved the layout and readability of the Filtering explanation box.
+- **Header Toggles Layout**<br>
+  Redesigned the All/Photos/Videos gallery header filters to use a unified pill-segmented control matching the rest of the interface. Centered the filter toggle for a more balanced layout.
+- **Config Reorganization**<br>
+  Grouped all settings in `config.ini` and `config-example.ini` into logical categories for improved readability.
+
+### Fixed
+- **Hidden Passphrase Toggles Bug**<br>
+  Fixed an issue where the Safe Only and Keyword Filter header toggles were incorrectly hidden if they required a passphrase. They now properly render and prompt for a passphrase on click, matching the behavior of other secure toggles.
+- **Startup Defaults Override Bug**<br>
+  Fixed an issue where "Enabled on startup" toggles incorrectly loaded state from local storage instead of honoring the backend configuration defaults upon starting a new session.
+
+---
+
 ## [2.0.21] - 2026-08-10
 ### Added
 - **Persisted Video Mute State**<br>

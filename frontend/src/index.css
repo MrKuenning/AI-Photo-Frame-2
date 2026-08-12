@@ -421,7 +421,7 @@ img, video {
   z-index: 2;
 }
 
-.nsfw-badge, .safemode-badge, .safe-badge {
+.nsfw-badge, .keyword-badge, .safe-badge {
   padding: 2px 6px;
   border-radius: var(--radius-sm);
   font-size: 10px;
@@ -433,7 +433,7 @@ img, video {
   color: white;
 }
 
-.safemode-badge {
+.keyword-badge {
   background: var(--warning);
   color: black;
 }
@@ -448,7 +448,7 @@ img, video {
   color: white;
 }
 
-.safemode-badge {
+.keyword-badge {
   background: var(--warning);
   color: black;
 }

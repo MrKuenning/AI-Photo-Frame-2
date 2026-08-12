@@ -33,7 +33,8 @@ def get_media(
     recursive: bool = Query(True),
     media_type: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
-    safe_mode: bool = Query(False),
+    safe_only: bool = Query(False),
+    keyword_filter: bool = Query(False),
     content_lock: bool = Query(False),
     hide_archive: bool = Query(False),
 ):
@@ -49,7 +50,8 @@ def get_media(
         recursive=recursive,
         media_type=media_type,
         search=search,
-        safe_mode=safe_mode,
+        safe_only=safe_only,
+        keyword_filter=keyword_filter,
         content_lock=content_lock,
         hide_archive=hide_archive,
     )
@@ -65,14 +67,16 @@ def get_media(
 
 @router.get("/media/latest")
 def get_latest_media(
-    safe_mode: bool = Query(False),
+    safe_only: bool = Query(False),
+    keyword_filter: bool = Query(False),
     content_lock: bool = Query(False),
     hide_archive: bool = Query(False),
     media_type: Optional[str] = Query(None),
 ):
     """Get the most recent media item"""
     item = db.get_latest(
-        safe_mode=safe_mode,
+        safe_only=safe_only,
+        keyword_filter=keyword_filter,
         content_lock=content_lock,
         hide_archive=hide_archive,
         media_type=media_type,

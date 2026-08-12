@@ -31,18 +31,20 @@ export default function Home() {
     updateItem,
     refresh
   } = useMediaList({
-    safe_mode: toggles.safeMode,
+    keyword_filter: toggles.keywordFilter,
+    safe_only: toggles.safeOnly,
     content_lock: toggles.contentLock,
     media_type: filterType === 'all' ? undefined : filterType
   });
 
   // Sync toggles and filters with API filters
   useEffect(() => {
-    setFilter('safe_mode', toggles.safeMode);
+    setFilter('keyword_filter', toggles.keywordFilter);
+    setFilter('safe_only', toggles.safeOnly);
     setFilter('content_lock', toggles.contentLock);
     setFilter('media_type', filterType === 'all' ? undefined : filterType);
     setSelectedIndex(0); // Reset selection when filters change
-  }, [toggles.safeMode, toggles.contentLock, filterType, setFilter]);
+  }, [toggles.keywordFilter, toggles.safeOnly, toggles.contentLock, filterType, setFilter]);
 
   // Safety check for out of bounds index
   useEffect(() => {
@@ -86,8 +88,9 @@ export default function Home() {
     } else if (lastMessage?.type === 'media_updated') {
       const updatedItem = lastMessage.data;
       if (
-        (toggles.safeMode && updatedItem.is_nsfw) || 
+        (toggles.keywordFilter && updatedItem.is_nsfw) || 
         (toggles.contentLock && updatedItem.is_content_locked) ||
+        (toggles.safeOnly && !updatedItem.is_safe) ||
         (filterType !== 'all' && updatedItem.media_type !== filterType)
       ) {
         removeItem(updatedItem.id);
@@ -96,7 +99,7 @@ export default function Home() {
       }
       clearLastMessage();
     }
-  }, [lastMessage, clearLastMessage, prependItem, removeItemByFilename, removeItem, updateItem, toggles.safeMode, toggles.contentLock, filterType]);
+  }, [lastMessage, clearLastMessage, prependItem, removeItemByFilename, removeItem, updateItem, toggles.keywordFilter, toggles.safeOnly, toggles.contentLock, filterType]);
 
   // Default selection when mediaList loads
   useEffect(() => {
@@ -264,11 +267,14 @@ export default function Home() {
                     />
                   )}
                   {item.is_flagged && <div className="flag-badge">⚠️</div>}
+                  {item.media_type === 'video' && (
+                    <div className="video-badge">▶</div>
+                  )}
                   {(item.is_content_locked || item.is_nsfw || (item.subfolder || '').toLowerCase().includes('safe')) ? (
                     <div className="media-badges">
                       {item.is_content_locked ? <div className="nsfw-badge">NSFW</div> : null}
-                      {item.is_nsfw ? <div className="safemode-badge">Safe Mode</div> : null}
-                      {(item.subfolder || '').toLowerCase().includes('safe') ? <div className="safe-badge">SAFE</div> : null}
+                      {item.is_nsfw ? <div className="keyword-badge">Keyword</div> : null}
+                      {(item.subfolder || '').toLowerCase().includes('safe') ? <div className="safe-badge">Safe</div> : null}
                     </div>
                   ) : null}
                 </div>
@@ -307,8 +313,8 @@ export default function Home() {
               {(currentItem.is_content_locked || currentItem.is_nsfw || (currentItem.subfolder || '').toLowerCase().includes('safe')) ? (
                 <div className="media-badges" style={{ bottom: '16px', right: '16px', transform: 'scale(1.2)', transformOrigin: 'bottom right' }}>
                   {currentItem.is_content_locked ? <div className="nsfw-badge">NSFW</div> : null}
-                  {currentItem.is_nsfw ? <div className="safemode-badge">Safe Mode</div> : null}
-                  {(currentItem.subfolder || '').toLowerCase().includes('safe') ? <div className="safe-badge">SAFE</div> : null}
+                  {currentItem.is_nsfw ? <div className="keyword-badge">Keyword</div> : null}
+                  {(currentItem.subfolder || '').toLowerCase().includes('safe') ? <div className="safe-badge">Safe</div> : null}
                 </div>
               ) : null}
               <MetadataOverlay item={currentItem} showBottomPane={showMetadata} />

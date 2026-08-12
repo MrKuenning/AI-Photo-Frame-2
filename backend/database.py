@@ -63,6 +63,7 @@ def _create_schema(conn: sqlite3.Connection):
             is_nsfw INTEGER DEFAULT 0,
             is_content_locked INTEGER DEFAULT 0,
             is_archived INTEGER DEFAULT 0,
+            is_safe INTEGER DEFAULT 0,
             -- Tracking
             metadata_extracted INTEGER DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -122,6 +123,10 @@ def _migrate_schema(conn: sqlite3.Connection):
             conn.execute("ALTER TABLE media ADD COLUMN is_archived INTEGER DEFAULT 0")
             print("📦 DB Migration: Added 'is_archived' column")
             
+        if 'is_safe' not in columns:
+            conn.execute("ALTER TABLE media ADD COLUMN is_safe INTEGER DEFAULT 0")
+            print("📦 DB Migration: Added 'is_safe' column")
+            
         conn.commit()
     except Exception as e:
         print(f"⚠️ DB Migration failed: {e}")
@@ -141,13 +146,14 @@ def upsert_media(
     is_nsfw: bool = False,
     is_content_locked: bool = False,
     is_archived: bool = False,
+    is_safe: bool = False,
 ) -> int:
     """Insert or update a media record. Returns the row id."""
     conn = _get_connection()
     cursor = conn.execute("""
         INSERT INTO media (file_path, filename, subfolder, top_folder, media_type,
-                          mod_time, file_size, is_nsfw, is_content_locked, is_archived)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                          mod_time, file_size, is_nsfw, is_content_locked, is_archived, is_safe)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(file_path) DO UPDATE SET
             filename = excluded.filename,
             subfolder = excluded.subfolder,
@@ -157,9 +163,10 @@ def upsert_media(
             file_size = excluded.file_size,
             is_nsfw = excluded.is_nsfw,
             is_content_locked = excluded.is_content_locked,
-            is_archived = excluded.is_archived
+            is_archived = excluded.is_archived,
+            is_safe = excluded.is_safe
     """, (file_path, filename, subfolder, top_folder, media_type,
-          mod_time, file_size, int(is_nsfw), int(is_content_locked), int(is_archived)))
+          mod_time, file_size, int(is_nsfw), int(is_content_locked), int(is_archived), int(is_safe)))
     conn.commit()
     return cursor.lastrowid
 
@@ -190,7 +197,7 @@ def update_metadata(
     conn.commit()
 
 
-def update_media_path(old_path: str, new_path: str, filename: str, subfolder: str, top_folder: str, is_nsfw: bool = False, is_content_locked: bool = False, is_archived: bool = False):
+def update_media_path(old_path: str, new_path: str, filename: str, subfolder: str, top_folder: str, is_nsfw: bool = False, is_content_locked: bool = False, is_archived: bool = False, is_safe: bool = False):
     """Update file path and location info without changing ID"""
     conn = _get_connection()
     conn.execute("""
@@ -201,9 +208,10 @@ def update_media_path(old_path: str, new_path: str, filename: str, subfolder: st
             top_folder = ?,
             is_nsfw = ?,
             is_content_locked = ?,
-            is_archived = ?
+            is_archived = ?,
+            is_safe = ?
         WHERE file_path = ? COLLATE NOCASE
-    """, (new_path, filename, subfolder, top_folder, int(is_nsfw), int(is_content_locked), int(is_archived), old_path))
+    """, (new_path, filename, subfolder, top_folder, int(is_nsfw), int(is_content_locked), int(is_archived), int(is_safe), old_path))
     conn.commit()
 
 
@@ -246,7 +254,8 @@ def get_media_page(
     recursive: bool = True,
     media_type: Optional[str] = None,
     search: Optional[str] = None,
-    safe_mode: bool = False,
+    safe_only: bool = False,
+    keyword_filter: bool = False,
     content_lock: bool = False,
     hide_archive: bool = False,
     nsfw_keywords: Optional[List[str]] = None,
@@ -279,8 +288,12 @@ def get_media_page(
     if content_lock:
         conditions.append("is_content_locked = 0")
 
-    # Safe mode: hide keyword-matched NSFW
-    if safe_mode:
+    # Safe Only: show ONLY files in SAFE folders
+    if safe_only:
+        conditions.append("is_safe = 1")
+
+    # Keyword Filter: hide keyword-matched NSFW
+    if keyword_filter:
         conditions.append("is_nsfw = 0")
 
     # Hide archive
@@ -315,7 +328,8 @@ def get_media_page(
 
 
 def get_latest(
-    safe_mode: bool = False,
+    safe_only: bool = False,
+    keyword_filter: bool = False,
     content_lock: bool = False,
     hide_archive: bool = False,
     media_type: Optional[str] = None,
@@ -324,7 +338,9 @@ def get_latest(
     conn = _get_connection()
     conditions = []
 
-    if safe_mode:
+    if safe_only:
+        conditions.append("is_safe = 1")
+    if keyword_filter:
         conditions.append("is_nsfw = 0")
     if content_lock:
         conditions.append("is_content_locked = 0")
@@ -431,7 +447,7 @@ def update_flags(file_path: str, **flags):
     set_clauses = []
     params = []
     for key, value in flags.items():
-        if key in ('is_nsfw', 'is_content_locked', 'is_archived'):
+        if key in ('is_nsfw', 'is_content_locked', 'is_archived', 'is_safe'):
             set_clauses.append(f"{key} = ?")
             params.append(int(value))
 
@@ -502,7 +518,7 @@ def _row_to_dict(row: sqlite3.Row) -> Dict[str, Any]:
         except (json.JSONDecodeError, TypeError):
             d['loras'] = None
     # Convert integer flags to booleans
-    for flag in ('is_nsfw', 'is_content_locked', 'is_archived', 'metadata_extracted'):
+    for flag in ('is_nsfw', 'is_content_locked', 'is_archived', 'is_safe', 'metadata_extracted'):
         if flag in d:
             d[flag] = bool(d[flag])
     return d

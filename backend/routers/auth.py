@@ -54,9 +54,9 @@ def has_action_permission(request: Request, action: str) -> bool:
         'settings': 'SETTINGS_PASSPHRASE',
         'content_scan': 'TOGGLE_CONTENT_SCAN_PASSPHRASE',
         'metadata_extraction': 'TOGGLE_METADATA_EXTRACTION_PASSPHRASE',
-        'content_lock': 'TOGGLE_CONTENT_LOCK_PASSPHRASE',
         'hide_archive': 'TOGGLE_ARCHIVE_PASSPHRASE',
-        'safemode': 'TOGGLE_SAFEMODE_PASSPHRASE',
+        'keyword_filter': 'TOGGLE_KEYWORD_FILTER_PASSPHRASE',
+        'safe_only': 'TOGGLE_SAFE_ONLY_PASSPHRASE',
     }
     
     config_key = passphrase_keys.get(action)
@@ -97,20 +97,28 @@ def auth_status(request: Request):
         # Toggle permissions
         "can_toggle_content_scan": has_action_permission(request, 'content_scan'),
         "can_toggle_content_lock": has_action_permission(request, 'content_lock'),
-        "can_toggle_safemode": has_action_permission(request, 'safemode'),
+        "can_toggle_keyword_filter": has_action_permission(request, 'keyword_filter'),
+        "can_toggle_safe_only": has_action_permission(request, 'safe_only'),
         
         # Toggle passphrase requirements
         "content_scan_passphrase_required": bool(settings.get('TOGGLE_CONTENT_SCAN_PASSPHRASE')) and not has_action_permission(request, 'content_scan'),
         "content_lock_passphrase_required": bool(settings.get('TOGGLE_CONTENT_LOCK_PASSPHRASE')) and not has_action_permission(request, 'content_lock'),
-        "safemode_passphrase_required": bool(settings.get('TOGGLE_SAFEMODE_PASSPHRASE')) and not has_action_permission(request, 'safemode'),
+        "keyword_filter_passphrase_required": bool(settings.get('TOGGLE_KEYWORD_FILTER_PASSPHRASE')) and not has_action_permission(request, 'keyword_filter'),
+        "safe_only_passphrase_required": bool(settings.get('TOGGLE_SAFE_ONLY_PASSPHRASE')) and not has_action_permission(request, 'safe_only'),
         
         # Defaults
-        "safe_mode_default": settings.get('SAFE_MODE_DEFAULT', False),
+        "keyword_filter_default": settings.get('KEYWORD_FILTER_DEFAULT', False),
+        "safe_only_default": settings.get('SAFE_ONLY_DEFAULT', False),
         "content_scan_default": settings.get('CONTENT_SCAN_DEFAULT', False),
         "content_lock_default": settings.get('CONTENT_LOCK_DEFAULT', False),
         "home_thumbnail_columns_default": settings.get('HOME_THUMBNAIL_COLUMNS_DEFAULT', 3),
         "gallery_thumbnail_size_default": settings.get('GALLERY_THUMBNAIL_SIZE_DEFAULT', 3),
         "thumbnail_aspect_ratio_default": settings.get('THUMBNAIL_ASPECT_RATIO', 'square'),
+        # Options Enabled
+        "keyword_filter_option_enabled": settings.get('ENABLE_KEYWORD_FILTER_OPTION', True),
+        "content_scan_option_enabled": settings.get('ENABLE_CONTENT_SCAN_OPTION', True),
+        "content_lock_option_enabled": settings.get('ENABLE_CONTENT_LOCK_OPTION', True),
+        "safe_only_option_enabled": settings.get('ENABLE_SAFE_ONLY_OPTION', True),
     }
 
 
@@ -127,7 +135,8 @@ def unlock_action(action: str, body: UnlockRequest, request: Request):
         'settings': 'SETTINGS_PASSPHRASE',
         'content_scan': 'TOGGLE_CONTENT_SCAN_PASSPHRASE',
         'content_lock': 'TOGGLE_CONTENT_LOCK_PASSPHRASE',
-        'safemode': 'TOGGLE_SAFEMODE_PASSPHRASE',
+        'keyword_filter': 'TOGGLE_KEYWORD_FILTER_PASSPHRASE',
+        'safe_only': 'TOGGLE_SAFE_ONLY_PASSPHRASE',
     }
 
     config_key = passphrase_keys.get(action)

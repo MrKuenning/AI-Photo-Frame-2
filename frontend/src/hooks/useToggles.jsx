@@ -11,7 +11,8 @@ export function TogglesProvider({ children }) {
   const [contentScan, setContentScan] = useState(false);
   
   // Client-side view toggles (persisted in localStorage or derived from auth defaults)
-  const [safeMode, setSafeMode] = useState(false);
+  const [keywordFilter, setKeywordFilter] = useState(false);
+  const [safeOnly, setSafeOnly] = useState(false);
   const [contentLock, setContentLock] = useState(false);
   const [homeThumbnailColumns, setHomeThumbnailColumns] = useState(3);
   const [galleryThumbnailSize, setGalleryThumbnailSize] = useState(3);
@@ -28,8 +29,6 @@ export function TogglesProvider({ children }) {
   useEffect(() => {
     if (authStatus && !authStatus.loading) {
       const initToggle = (key, defaultVal) => {
-        const stored = localStorage.getItem(key);
-        if (stored !== null) return stored === 'true';
         return defaultVal;
       };
       
@@ -45,7 +44,8 @@ export function TogglesProvider({ children }) {
         return defaultVal;
       };
 
-      setSafeMode(initToggle('safeMode', authStatus.safe_mode_default));
+      setKeywordFilter(initToggle('keywordFilter', authStatus.keyword_filter_default));
+      setSafeOnly(initToggle('safeOnly', authStatus.safe_only_default));
       setContentLock(initToggle('contentLock', authStatus.content_lock_default));
       setHomeThumbnailColumns(initInt('homeThumbnailColumns', authStatus.home_thumbnail_columns_default || (window.innerWidth <= 768 ? 4 : 3)));
       setGalleryThumbnailSize(initInt('galleryThumbnailSize', authStatus.gallery_thumbnail_size_default || (window.innerWidth <= 768 ? 6 : 3)));
@@ -64,16 +64,16 @@ export function TogglesProvider({ children }) {
   };
 
   // Handlers for client-side toggles
-  const toggleSafeMode = () => {
-    const newVal = !safeMode;
-    setSafeMode(newVal);
-    localStorage.setItem('safeMode', String(newVal));
+  const toggleKeywordFilter = () => {
+    setKeywordFilter(!keywordFilter);
+  };
+
+  const toggleSafeOnly = () => {
+    setSafeOnly(!safeOnly);
   };
 
   const toggleContentLock = () => {
-    const newVal = !contentLock;
-    setContentLock(newVal);
-    localStorage.setItem('contentLock', String(newVal));
+    setContentLock(!contentLock);
   };
   
   const updateHomeThumbnailColumns = (cols) => {
@@ -94,10 +94,10 @@ export function TogglesProvider({ children }) {
   return (
     <TogglesContext.Provider value={{
       contentScan,
-      safeMode, contentLock,
+      keywordFilter, safeOnly, contentLock,
       homeThumbnailColumns, galleryThumbnailSize, thumbnailAspectRatio,
       toggleServerContentScan,
-      toggleSafeMode, toggleContentLock,
+      toggleKeywordFilter, toggleSafeOnly, toggleContentLock,
       updateHomeThumbnailColumns, updateGalleryThumbnailSize, updateThumbnailAspectRatio
     }}>
       {children}

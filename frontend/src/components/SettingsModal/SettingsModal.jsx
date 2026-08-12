@@ -127,7 +127,9 @@ export default function SettingsModal({ onClose }) {
           <button className={`tab-btn ${activeTab === 'global' ? 'active' : ''}`} onClick={() => setActiveTab('global')}>Global</button>
           <button className={`tab-btn ${activeTab === 'view' ? 'active' : ''}`} onClick={() => setActiveTab('view')}>View</button>
           <button className={`tab-btn ${activeTab === 'security' ? 'active' : ''}`} onClick={() => setActiveTab('security')}>Security</button>
+          <button className={`tab-btn ${activeTab === 'filtering' ? 'active' : ''}`} onClick={() => setActiveTab('filtering')}>Filtering</button>
           <button className={`tab-btn ${activeTab === 'scanning' ? 'active' : ''}`} onClick={() => setActiveTab('scanning')}>Scanning</button>
+          <button className={`tab-btn ${activeTab === 'archive' ? 'active' : ''}`} onClick={() => setActiveTab('archive')}>Archive</button>
         </div>
         <div className="modal-body">
           {error && <div className="alert alert-danger mb-4">{error}</div>}
@@ -170,46 +172,6 @@ export default function SettingsModal({ onClose }) {
                     </div>
                   </label>
 
-                  <label className="toggle-switch form-group-inline">
-                    <input type="checkbox" name="HIDE_ARCHIVE" checked={!!settings.HIDE_ARCHIVE} onChange={handleChange} />
-                    <span className="toggle-track"></span>
-                    <div className="toggle-label-content">
-                      <strong>Hide Archive</strong>
-                      <small>Hide archived content globally</small>
-                    </div>
-                  </label>
-                </div>
-
-                {/* Startup Defaults */}
-                <div className="settings-section">
-                  <h3><span className="icon">⚡</span> Startup Defaults</h3>
-
-                  <label className="toggle-switch form-group-inline">
-                    <input type="checkbox" name="SAFE_MODE_DEFAULT" checked={!!settings.SAFE_MODE_DEFAULT} onChange={handleChange} />
-                    <span className="toggle-track"></span>
-                    <div className="toggle-label-content">
-                      <strong>Safe Mode</strong>
-                      <small>Hide flagged/NSFW files</small>
-                    </div>
-                  </label>
-
-                  <label className="toggle-switch form-group-inline">
-                    <input type="checkbox" name="CONTENT_SCAN_DEFAULT" checked={!!settings.CONTENT_SCAN_DEFAULT} onChange={handleChange} />
-                    <span className="toggle-track"></span>
-                    <div className="toggle-label-content">
-                      <strong>Content Scan</strong>
-                      <small>Auto-detect & flag new files</small>
-                    </div>
-                  </label>
-
-                  <label className="toggle-switch form-group-inline">
-                    <input type="checkbox" name="CONTENT_LOCK_DEFAULT" checked={!!settings.CONTENT_LOCK_DEFAULT} onChange={handleChange} />
-                    <span className="toggle-track"></span>
-                    <div className="toggle-label-content">
-                      <strong>Content Lock</strong>
-                      <small>Hide specific folders</small>
-                    </div>
-                  </label>
                 </div>
               </>
             )}
@@ -262,8 +224,9 @@ export default function SettingsModal({ onClose }) {
                     { label: 'Unflag Files', key: 'FLAG' },
                     { label: 'Archive Files', key: 'ARCHIVE' },
                     { label: 'Content Scan Toggle', key: 'TOGGLE_CONTENT_SCAN' },
-                    { label: 'Folder Lock Toggle', key: 'TOGGLE_CONTENT_LOCK' },
-                    { label: 'Safe Mode Toggle', key: 'TOGGLE_SAFEMODE' }
+                    { label: 'Keyword Filter Toggle', key: 'TOGGLE_KEYWORD_FILTER' },
+                    { label: 'Safe Only Toggle', key: 'TOGGLE_SAFE_ONLY' },
+                    { label: 'Folder Lock Toggle', key: 'TOGGLE_CONTENT_LOCK' }
                   ].map(perm => (
                     <div className="permission-row" key={perm.key} style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem', gap: '1rem' }}>
                       <div className="perm-label" style={{ width: '200px' }}>{perm.label}</div>
@@ -276,66 +239,200 @@ export default function SettingsModal({ onClose }) {
               </>
             )}
 
-            {activeTab === 'scanning' && (
+            {activeTab === 'filtering' && (
               <>
-                {/* Safe Mode Settings */}
                 <div className="settings-section">
-                  <h3 className="section-title-blue"><span className="icon">🛡️</span> Safe Mode Settings</h3>
+                  <h3 className="section-title-blue"><span className="icon">📂</span> Media Filtering Overview</h3>
+
                   <div className="info-box info-box-blue mb-4">
-                    <strong>Safe Mode</strong> uses NSFW Keywords to identify what to hide.
-                  </div>
-                  <div className="form-group">
-                    <label className="section-subtitle">NSFW Keywords</label>
-                    <textarea name="NSFW_KEYWORDS" className="input textarea mt-2" rows="3" value={settings.NSFW_KEYWORDS || ''} onChange={handleChange} placeholder="adult, bikini, nude..."></textarea>
-                    <small>Comma-separated keywords checked in image metadata</small>
-                  </div>
-                </div>
-
-                {/* Content Scan Settings */}
-                <div className="settings-section">
-                  <h3 className="section-title-blue"><span className="icon">👁️</span> Content Scan Settings</h3>
-
-                  <div className="info-box info-box-yellow mb-4">
-                    <strong>Content Scan</strong> automatically detects and flags new files. It uses an AI-based NudeNet to scan incoming images. Flagged files are moved to NSFW folders.
+                    <strong>Manual & Automatic Categorization</strong><br />
+                    AI Photo Frame provides several ways to filter your media content. In the media viewer, you can use the action buttons to organize files:
+                    <ul style={{ margin: '8px 0 0 20px', padding: 0 }}>
+                      <li className="mb-1"><strong>Delete:</strong> Permanently removes the file.</li>
+                      <li className="mb-1"><strong>Flag NSFW:</strong> Moves the media into a subfolder called <em>NSFW</em>.</li>
+                      <li><strong>Mark Safe:</strong> Moves the media into a subfolder called <em>SAFE</em>.</li>
+                    </ul>
                   </div>
 
-                  <div className="form-group">
+                  <div className="mb-3">
+                    <h4 className="section-subtitle" style={{ fontSize: '1.1em', marginBottom: '4px' }}>Custom Folder Definitions</h4>
+                    <p className="text-muted" style={{ fontSize: '0.9em', margin: 0 }}>
+                      You can define additional folder names for the Gallery to automatically treat as NSFW or SAFE.
+                    </p>
+                  </div>
+
+                  <div className="form-group mb-4">
                     <label className="section-subtitle">NSFW Folders</label>
                     <input type="text" name="NSFW_FOLDERS" className="input mt-2" value={settings.NSFW_FOLDERS || ''} onChange={handleChange} />
                     <small>Comma-separated folder names where flagged content is moved - In addition to NSFW. Hidden by content lock.</small>
                   </div>
 
-                  <div className="form-group mt-3">
+                  <div className="form-group mb-4">
                     <label className="section-subtitle">Safe Folders</label>
                     <input type="text" name="SAFE_FOLDERS" className="input mt-2" value={settings.SAFE_FOLDERS || ''} onChange={handleChange} />
                     <small>Comma-separated folder names that skip further content scanning - In addition to SAFE</small>
                   </div>
+                </div>
 
-                    <div className="form-row mt-4 align-items-end">
-                      <div className="form-group half mb-0">
-                        <label className="section-subtitle">Scan Offset</label>
-                        <input type="number" name="CONTENT_SCAN_OFFSET" className="input mt-2" value={settings.CONTENT_SCAN_OFFSET || 0} onChange={handleChange} />
-                        <small>Skip N newest images before scanning</small>
-                      </div>
-                      <div className="form-group half mb-0">
-                        <label className="section-subtitle">Nudity Threshold</label>
-                        <input type="range" name="NUDITY_THRESHOLD" className="mt-2 w-100 slider-blue" min="0" max="1" step="0.05" value={settings.NUDITY_THRESHOLD || 0.5} onChange={handleChange} />
-                        <small>Lower = more sensitive ({settings.NUDITY_THRESHOLD || 0.5})</small>
-                      </div>
-                    </div>
+                <div className="settings-section">
+                  <h3 className="section-title-blue"><span className="icon">✅</span> Safe Only Toggle Settings</h3>
+                  <div className="info-box info-box-blue mb-4">
+                    Content Scan adds a toggle that when enabled will only displays content that has been marked as safe and moved to the SAFE folder.
+                  </div>
 
-                    <div className="form-group mt-4">
-                      <label className="checkbox-label">
-                        <input 
-                          type="checkbox" 
-                          name="SCAN_VIDEO_FILES"
-                          checked={settings.SCAN_VIDEO_FILES ?? true} 
-                          onChange={handleChange}
-                        />
-                        <span>Scan Video Files</span>
+                  <div className="form-row mb-4">
+                    <div className="toggle-container half mb-0" style={{ flex: 1 }}>
+                      <label className="toggle-switch form-group-inline mb-0">
+                        <input type="checkbox" name="ENABLE_SAFE_ONLY_OPTION" checked={settings.ENABLE_SAFE_ONLY_OPTION ?? true} onChange={handleChange} />
+                        <span className="toggle-track"></span>
+                        <div className="toggle-label-content">
+                          <strong>Show Safe Folder Toggle in Header</strong>
+                          <small>Show the Safe Folder toggle in the header</small>
+                        </div>
                       </label>
-                      <small className="d-block mt-1">If disabled, completely ignores content scanning for video files to avoid locking them.</small>
                     </div>
+
+                    <div className="toggle-container half mb-0" style={{ flex: 1 }}>
+                      <label className="toggle-switch form-group-inline mb-0">
+                        <input type="checkbox" name="SAFE_ONLY_DEFAULT" checked={!!settings.SAFE_ONLY_DEFAULT} onChange={handleChange} />
+                        <span className="toggle-track"></span>
+                        <div className="toggle-label-content">
+                          <strong>Safe Toggle Enabled on Startup</strong>
+                          <small>Only show safe files by default</small>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="settings-section">
+                  <h3 className="section-title-blue"><span className="icon">🔒</span> Folder Lock Toggle Settings</h3>
+                  <div className="info-box info-box-blue mb-4">
+                    Folder Lock is a toggle that when enabled will hide files in NSFW folders.
+                  </div>
+
+                  <div className="form-row mb-4">
+                    <div className="toggle-container half mb-0" style={{ flex: 1 }}>
+                      <label className="toggle-switch form-group-inline mb-0">
+                        <input type="checkbox" name="ENABLE_CONTENT_LOCK_OPTION" checked={settings.ENABLE_CONTENT_LOCK_OPTION ?? true} onChange={handleChange} />
+                        <span className="toggle-track"></span>
+                        <div className="toggle-label-content">
+                          <strong>Show Folder Lock Toggle in Header</strong>
+                          <small>Show the Folder Lock toggle in the header</small>
+                        </div>
+                      </label>
+                    </div>
+
+                    <div className="toggle-container half mb-0" style={{ flex: 1 }}>
+                      <label className="toggle-switch form-group-inline mb-0">
+                        <input type="checkbox" name="CONTENT_LOCK_DEFAULT" checked={!!settings.CONTENT_LOCK_DEFAULT} onChange={handleChange} />
+                        <span className="toggle-track"></span>
+                        <div className="toggle-label-content">
+                          <strong>Folder Toggle Enabled on Startup</strong>
+                          <small>Hide specific folders by default</small>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="settings-section">
+                  <h3 className="section-title-blue"><span className="icon">🛡️</span> Keyword Filter Toggle Settings</h3>
+                  <div className="info-box info-box-blue mb-4">
+                    (Adds a toggle to the header that when enabled will filter / hide media based on a user defined Keywords list.)
+                  </div>
+
+                  <div className="form-row mb-4">
+                    <div className="toggle-container half mb-0" style={{ flex: 1 }}>
+                      <label className="toggle-switch form-group-inline mb-0">
+                        <input type="checkbox" name="ENABLE_KEYWORD_FILTER_OPTION" checked={settings.ENABLE_KEYWORD_FILTER_OPTION ?? true} onChange={handleChange} />
+                        <span className="toggle-track"></span>
+                        <div className="toggle-label-content">
+                          <strong>Show Keyword Filter Toggle in Header</strong>
+                          <small>Show the Keyword Filter toggle in the header</small>
+                        </div>
+                      </label>
+                    </div>
+
+                    <div className="toggle-container half mb-0" style={{ flex: 1 }}>
+                      <label className="toggle-switch form-group-inline mb-0">
+                        <input type="checkbox" name="KEYWORD_FILTER_DEFAULT" checked={!!settings.KEYWORD_FILTER_DEFAULT} onChange={handleChange} />
+                        <span className="toggle-track"></span>
+                        <div className="toggle-label-content">
+                          <strong>Keyword Toggle enabled on Startup</strong>
+                          <small>Hide flagged/NSFW files by default</small>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="section-subtitle">Keywords</label>
+                    <textarea name="NSFW_KEYWORDS" className="input textarea mt-2" rows="3" value={settings.NSFW_KEYWORDS || ''} onChange={handleChange} placeholder="adult, bikini, nude..."></textarea>
+                    <small>Comma-separated keywords checked in media metadata</small>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {activeTab === 'scanning' && (
+              <>
+                <div className="settings-section">
+                  <h3 className="section-title-blue"><span className="icon">👁️</span> Content Scan Settings</h3>
+
+                  <div className="info-box info-box-yellow mb-4">
+                    Content Scan adds a toggle that when enabled automatically detects and flags new files. It uses an AI-based NudeNet to scan incoming media. Media can also be manually flagged as NSFW. Flagged files are moved to NSFW folders.
+                  </div>
+
+                  <div className="form-row mb-4">
+                    <div className="toggle-container half mb-0" style={{ flex: 1 }}>
+                      <label className="toggle-switch form-group-inline mb-0">
+                        <input type="checkbox" name="ENABLE_CONTENT_SCAN_OPTION" checked={settings.ENABLE_CONTENT_SCAN_OPTION ?? true} onChange={handleChange} />
+                        <span className="toggle-track"></span>
+                        <div className="toggle-label-content">
+                          <strong>Show Content Scan Toggle in Header</strong>
+                          <small>Show the Content Scan toggle in the header</small>
+                        </div>
+                      </label>
+                    </div>
+
+                    <div className="toggle-container half mb-0" style={{ flex: 1 }}>
+                      <label className="toggle-switch form-group-inline mb-0">
+                        <input type="checkbox" name="CONTENT_SCAN_DEFAULT" checked={!!settings.CONTENT_SCAN_DEFAULT} onChange={handleChange} />
+                        <span className="toggle-track"></span>
+                        <div className="toggle-label-content">
+                          <strong>Content Scan Toggle Enabled on Startup</strong>
+                          <small>Auto-detect & flag new files by default</small>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="form-row mt-4 align-items-end">
+                    <div className="form-group half mb-0">
+                      <label className="section-subtitle">Scan Offset</label>
+                      <input type="number" name="CONTENT_SCAN_OFFSET" className="input mt-2" value={settings.CONTENT_SCAN_OFFSET || 0} onChange={handleChange} />
+                      <small>Skip N newest images before scanning</small>
+                    </div>
+                    <div className="form-group half mb-0">
+                      <label className="section-subtitle">Nudity Threshold</label>
+                      <input type="range" name="NUDITY_THRESHOLD" className="mt-2 w-100 slider-blue" min="0" max="1" step="0.05" value={settings.NUDITY_THRESHOLD || 0.5} onChange={handleChange} />
+                      <small>Lower = more sensitive ({settings.NUDITY_THRESHOLD || 0.5})</small>
+                    </div>
+                  </div>
+
+                  <div className="form-group mt-4">
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        name="SCAN_VIDEO_FILES"
+                        checked={settings.SCAN_VIDEO_FILES ?? true}
+                        onChange={handleChange}
+                      />
+                      <span>Scan Video Files</span>
+                    </label>
+                    <small className="d-block mt-1">If disabled, completely ignores content scanning for video files to avoid locking them.</small>
+                  </div>
 
                   <div className="form-group mt-4">
                     <label className="section-subtitle">NSFW Labels (NudeNet)</label>
@@ -400,6 +497,23 @@ export default function SettingsModal({ onClose }) {
                       </div>
                     </div>
                   </div>
+                </div>
+              </>
+            )}
+
+            {activeTab === 'archive' && (
+              <>
+                <div className="settings-section">
+                  <h3><span className="icon">📦</span> Archive Settings</h3>
+
+                  <label className="toggle-switch form-group-inline">
+                    <input type="checkbox" name="HIDE_ARCHIVE" checked={!!settings.HIDE_ARCHIVE} onChange={handleChange} />
+                    <span className="toggle-track"></span>
+                    <div className="toggle-label-content">
+                      <strong>Hide Archive</strong>
+                      <small>Hide archived content globally</small>
+                    </div>
+                  </label>
                 </div>
               </>
             )}

@@ -16,7 +16,7 @@ export default function Gallery() {
   const { isConnected, lastMessage, clearLastMessage } = useWebSocket();
   const { filterType, refreshKey } = useMediaFilter();
   const { authStatus, requireUnlock } = useAuth();
-  
+
   const [currentFolder, setCurrentFolder] = useState('');
   const [activeItemIndex, setActiveItemIndex] = useState(-1);
   const [searchQuery, setSearchQuery] = useState('');
@@ -39,7 +39,8 @@ export default function Gallery() {
   } = useMediaList({
     subfolder: currentFolder,
     recursive: true,
-    safe_mode: toggles.safeMode,
+    keyword_filter: toggles.keywordFilter,
+    safe_only: toggles.safeOnly,
     content_lock: toggles.contentLock,
     search: searchQuery,
     media_type: filterType === 'all' ? undefined : filterType
@@ -47,11 +48,12 @@ export default function Gallery() {
 
   // Apply view toggles to filters
   useEffect(() => {
-    setFilter('safe_mode', toggles.safeMode);
+    setFilter('keyword_filter', toggles.keywordFilter);
+    setFilter('safe_only', toggles.safeOnly);
     setFilter('content_lock', toggles.contentLock);
     setFilter('media_type', filterType === 'all' ? undefined : filterType);
     setActiveItemIndex(-1); // Close viewer when filters change
-  }, [toggles.safeMode, toggles.contentLock, filterType, setFilter]);
+  }, [toggles.keywordFilter, toggles.safeOnly, toggles.contentLock, filterType, setFilter]);
 
   // Safety check for out of bounds index
   useEffect(() => {
@@ -79,25 +81,25 @@ export default function Gallery() {
       const newItem = lastMessage.data;
       const matchesSubfolder = !filters.subfolder || newItem.subfolder === filters.subfolder;
       const matchesMediaType = !filters.media_type || filters.media_type === 'all' || newItem.media_type === filters.media_type;
-      
+
       if (matchesSubfolder && matchesMediaType) {
         setActiveItemIndex(prev => {
           if (prev === -1) return -1;
-          
+
           const isNewest = itemsRef.current.length === 0 || newItem.mod_time > itemsRef.current[0].mod_time;
           // If viewing the absolute newest item and a newer item comes in, auto-load it
           if (isNewest && prev === 0) return 0;
-          
+
           // Otherwise, find where it will be inserted and shift the index if necessary
           const insertIndex = itemsRef.current.findIndex(item => newItem.mod_time >= item.mod_time);
           if (insertIndex !== -1 && insertIndex <= prev) {
             return prev + 1;
           }
-          
+
           return prev;
         });
       }
-      
+
       prependItem(newItem);
       clearLastMessage();
     } else if (lastMessage?.type === 'media_deleted') {
@@ -107,11 +109,12 @@ export default function Gallery() {
       const updatedItem = lastMessage.data;
       const matchesSubfolder = !filters.subfolder || updatedItem.subfolder === filters.subfolder;
       const matchesMediaType = !filters.media_type || filters.media_type === 'all' || updatedItem.media_type === filters.media_type;
-      
+
       if (
         !matchesSubfolder || !matchesMediaType ||
-        (toggles.safeMode && updatedItem.is_nsfw) || 
-        (toggles.contentLock && updatedItem.is_content_locked)
+        (toggles.keywordFilter && updatedItem.is_nsfw) ||
+        (toggles.contentLock && updatedItem.is_content_locked) ||
+        (toggles.safeOnly && !updatedItem.is_safe)
       ) {
         removeItem(updatedItem.id);
       } else {
@@ -125,7 +128,7 @@ export default function Gallery() {
       }
       clearLastMessage();
     }
-  }, [lastMessage, clearLastMessage, prependItem, removeItemByFilename, removeItem, updateItem, filters, toggles.safeMode, toggles.contentLock]);
+  }, [lastMessage, clearLastMessage, prependItem, removeItemByFilename, removeItem, updateItem, filters, toggles.keywordFilter, toggles.safeOnly, toggles.contentLock]);
 
   const handleFolderSelect = (folder) => {
     setCurrentFolder(folder);
@@ -169,12 +172,12 @@ export default function Gallery() {
     requireUnlock('delete', authStatus?.delete_passphrase_required, async () => {
       try {
         await deleteMedia(activeItem.id);
-        
+
         // If we deleted the very last item in the list, we need to go back one
         if (activeItemIndex === items.length - 1 && items.length > 1) {
           setActiveItemIndex(items.length - 2);
         }
-        
+
         removeItem(activeItem.id);
       } catch (err) {
         alert(`Error deleting: ${err.message}`);
@@ -266,33 +269,33 @@ export default function Gallery() {
       {/* Top Toolbar */}
       {!fullscreen && (
         <div className="gallery-toolbar glass" style={{ paddingBottom: 0, borderBottom: 'none' }}>
-          <FolderBrowser 
-            currentFolder={currentFolder} 
-            onFolderSelect={handleFolderSelect} 
+          <FolderBrowser
+            currentFolder={currentFolder}
+            onFolderSelect={handleFolderSelect}
           >
             <div className="slider-container" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Size:</label>
-              <select 
-                value={toggles.galleryThumbnailSize} 
+              <select
+                value={toggles.galleryThumbnailSize}
                 onChange={e => toggles.updateGalleryThumbnailSize(Number(e.target.value))}
                 className="input"
                 style={{ padding: '4px 8px' }}
               >
-                {[1,2,3,4,5,6,7,8].map(s => <option key={s} value={s}>{s}</option>)}
+                {[1, 2, 3, 4, 5, 6, 7, 8].map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
-            
+
             <form className="search-form" onSubmit={handleSearch} style={{ margin: 0, flexGrow: 1, minWidth: '150px' }}>
-              <input 
-                type="text" 
-                className="input search-input" 
-                placeholder="Search prompt, model..." 
+              <input
+                type="text"
+                className="input search-input"
+                placeholder="Search prompt, model..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{ padding: '4px 8px', width: '100%' }}
               />
             </form>
-            
+
             {scanProgress && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', flexGrow: 1, padding: '0 12px', color: 'var(--text-secondary)', minWidth: '250px', flexBasis: '250px' }}>
                 <div style={{ flexGrow: 1, background: 'var(--bg-elevated)', height: '6px', borderRadius: '3px', overflow: 'hidden', minWidth: '100px' }}>
@@ -311,7 +314,7 @@ export default function Gallery() {
       <div className={`gallery-content ${activeItem ? 'split-view' : ''}`}>
         {!fullscreen && (
           <div className="grid-section">
-            <MediaGrid 
+            <MediaGrid
               items={items}
               loading={loading}
               hasMore={hasMore}
@@ -327,20 +330,20 @@ export default function Gallery() {
         {activeItem && (
           <div className={`viewer-section glass fade-in ${fullscreen ? 'expanded' : ''}`}>
             {!fullscreen && <button className="close-viewer-btn" onClick={closeViewer}>✕</button>}
-            
+
             <div className="hero-image-container" style={{ flex: 1, position: 'relative', overflow: 'hidden', minHeight: 0, minWidth: 0 }}>
-              <HeroViewer 
+              <HeroViewer
                 key={activeItem.id}
-                item={activeItem} 
-                onNext={handleOlder} 
-                onPrev={handleNewer} 
-                onClose={fullscreen ? () => setFullscreen(false) : closeViewer} 
+                item={activeItem}
+                onNext={handleOlder}
+                onPrev={handleNewer}
+                onClose={fullscreen ? () => setFullscreen(false) : closeViewer}
               />
               {(activeItem.is_content_locked || activeItem.is_nsfw || (activeItem.subfolder || '').toLowerCase().includes('safe')) ? (
                 <div className="media-badges" style={{ bottom: '16px', right: '16px', transform: 'scale(1.2)', transformOrigin: 'bottom right' }}>
                   {activeItem.is_content_locked ? <div className="nsfw-badge">NSFW</div> : null}
-                  {activeItem.is_nsfw ? <div className="safemode-badge">Safe Mode</div> : null}
-                  {(activeItem.subfolder || '').toLowerCase().includes('safe') ? <div className="safe-badge">SAFE</div> : null}
+                  {activeItem.is_nsfw ? <div className="keyword-badge">Keyword</div> : null}
+                  {(activeItem.subfolder || '').toLowerCase().includes('safe') ? <div className="safe-badge">Safe</div> : null}
                 </div>
               ) : null}
               <MetadataOverlay item={activeItem} showBottomPane={showMetadata} />

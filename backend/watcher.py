@@ -71,12 +71,13 @@ def _classify_file(file_path: str) -> dict:
     # Check folder-based flags
     path_parts = subfolder.lower().split('/') if subfolder else []
     nsfw_folders = [f.lower() for f in settings.get('NSFW_FOLDERS', [])]
+    safe_folders = [f.lower() for f in settings.get('SAFE_FOLDERS', ['SAFE'])]
     is_content_locked = 'nsfw' in path_parts or any(f in path_parts for f in nsfw_folders)
     is_archived = 'archive' in path_parts
 
     # Check keyword-based NSFW (from filename)
     is_nsfw = False
-    is_safe = 'safe' in path_parts
+    is_safe = 'safe' in path_parts or any(f in path_parts for f in safe_folders)
     if not is_safe:
         nsfw_keywords = settings.get('NSFW_KEYWORDS', [])
         filename_lower = filename.lower()
@@ -102,6 +103,7 @@ def _classify_file(file_path: str) -> dict:
         'is_nsfw': is_nsfw,
         'is_content_locked': is_content_locked,
         'is_archived': is_archived,
+        'is_safe': is_safe,
     }
 
 
@@ -262,7 +264,8 @@ class MediaChangeHandler(FileSystemEventHandler):
                         top_folder=info['top_folder'],
                         is_nsfw=info['is_nsfw'],
                         is_content_locked=info['is_content_locked'],
-                        is_archived=info['is_archived']
+                        is_archived=info['is_archived'],
+                        is_safe=info['is_safe']
                     )
                     
                     log_level = settings.get('LOGGING_LEVEL', 'basic')

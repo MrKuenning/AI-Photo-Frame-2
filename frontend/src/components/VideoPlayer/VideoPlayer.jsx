@@ -20,6 +20,8 @@ export default function VideoPlayer({ url, item, onLoad }) {
   const [duration, setDuration] = useState(0);
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [wasPlayingBeforeScrub, setWasPlayingBeforeScrub] = useState(false);
+  const [showFlash, setShowFlash] = useState(false);
+  const [captureMessage, setCaptureMessage] = useState('');
 
   // AI videos are often 8-12fps. Using 10fps (0.1s) ensures Android registers the seek and repaints.
   const FPS = 10;
@@ -108,9 +110,14 @@ export default function VideoPlayer({ url, item, onLoad }) {
     const video = videoRef.current;
     if (!video || !item) return;
     
+    const wasPlaying = !video.paused;
     video.pause();
     
     try {
+      // Trigger flash immediately for better UX
+      setShowFlash(true);
+      setTimeout(() => setShowFlash(false), 300);
+
       const canvas = document.createElement('canvas');
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
@@ -122,10 +129,16 @@ export default function VideoPlayer({ url, item, onLoad }) {
       const res = await saveFrame(item.id, dataUrl);
       if (res.success) {
         console.log("📸 Frame Captured:", res.filename);
+        setCaptureMessage(`Saved: ${res.filename}`);
+        setTimeout(() => setCaptureMessage(''), 3000);
       }
     } catch (err) {
       console.error("Failed to capture frame:", err);
       alert(`Error capturing frame: ${err.message}`);
+    } finally {
+      if (wasPlaying) {
+        video.play().catch(err => console.error("Could not resume video:", err));
+      }
     }
   };
 
@@ -226,7 +239,16 @@ export default function VideoPlayer({ url, item, onLoad }) {
         loop
         playsInline
         muted={isMuted}
+        crossOrigin="anonymous"
       />
+      
+      {showFlash && <div className="capture-flash"></div>}
+      
+      {captureMessage && (
+        <div className="capture-toast">
+          {captureMessage}
+        </div>
+      )}
       
       <div className="video-controls glass" onClick={e => e.stopPropagation()}>
         {/* Playback Controls (Left) */}

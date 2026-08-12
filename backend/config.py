@@ -13,6 +13,16 @@ DEFAULTS = {
     'PORT': 5000,
     'IMAGE_FOLDER': '',
     'MAX_INITIAL_LOAD': 100,
+    'LOGGING_LEVEL': 'basic',
+    
+    # Grid Settings
+    'HOME_THUMBNAIL_COLUMNS_DEFAULT': 3,
+    'GALLERY_THUMBNAIL_SIZE_DEFAULT': 3,
+    'THUMBNAIL_ASPECT_RATIO': 'square',
+    
+    # Folders & Definitions
+    'NSFW_FOLDERS': ['nsfw'],
+    'SAFE_FOLDERS': ['SAFE'],
     'NSFW_KEYWORDS': [
         'adult', 'ass', 'bikini', 'boob', 'booty', 'bra', 'busty', 'camgirl',
         'camwhore', 'cleavage', 'curvy', 'dominatrix', 'escort', 'erotic', 'explicit',
@@ -24,34 +34,43 @@ DEFAULTS = {
         'swimsuit', 'thick', 'thighs', 'thong', 'topless', 'underwear', 'wet', 'penis',
         'dancing', 'breast', 'bathing', 'swim', 'xxx', 'yoga'
     ],
-    'NSFW_FOLDERS': ['nsfw'],
-    'SAFE_FOLDERS': ['SAFE'],
-    'NUDITY_THRESHOLD': 0.5,
     'NSFW_LABELS': [
         'FEMALE_BREAST_EXPOSED', 'FEMALE_GENITALIA_EXPOSED',
         'MALE_GENITALIA_EXPOSED', 'BUTTOCKS_EXPOSED', 'ANUS_EXPOSED'
     ],
-    'SAFE_MODE_DEFAULT': False,
-    'CONTENT_SCAN_DEFAULT': False,
+    
+    # Feature Toggles
     'METADATA_EXTRACTION': True,
-    'CONTENT_LOCK_DEFAULT': False,
     'HIDE_ARCHIVE': False,
-    'LOGGING_LEVEL': 'basic',
-    'THUMBNAIL_ASPECT_RATIO': 'square',
-    'HOME_THUMBNAIL_COLUMNS_DEFAULT': 3,
-    'GALLERY_THUMBNAIL_SIZE_DEFAULT': 3,
-    # Action passphrase overrides
+    
+    # Keyword Filter Settings
+    'ENABLE_KEYWORD_FILTER_OPTION': True,
+    'KEYWORD_FILTER_DEFAULT': False,
+    'TOGGLE_KEYWORD_FILTER_PASSPHRASE': '',
+    
+    # Safe Only Settings
+    'ENABLE_SAFE_ONLY_OPTION': True,
+    'SAFE_ONLY_DEFAULT': False,
+    'TOGGLE_SAFE_ONLY_PASSPHRASE': '',
+    
+    # Folder Lock Settings
+    'ENABLE_CONTENT_LOCK_OPTION': True,
+    'CONTENT_LOCK_DEFAULT': False,
+    'TOGGLE_CONTENT_LOCK_PASSPHRASE': '',
+    
+    # Content Scan Settings
+    'ENABLE_CONTENT_SCAN_OPTION': True,
+    'CONTENT_SCAN_DEFAULT': False,
+    'TOGGLE_CONTENT_SCAN_PASSPHRASE': '',
+    'CONTENT_SCAN_OFFSET': 0,
+    'NUDITY_THRESHOLD': 0.5,
+    'SCAN_VIDEO_FILES': True,
+    
+    # Security / Passphrases
     'DELETE_PASSPHRASE': '',
     'FLAG_PASSPHRASE': '',
     'ARCHIVE_PASSPHRASE': '',
     'SETTINGS_PASSPHRASE': '',
-    # Toggle passphrase overrides
-    'TOGGLE_CONTENT_SCAN_PASSPHRASE': '',
-    'TOGGLE_CONTENT_LOCK_PASSPHRASE': '',
-    'TOGGLE_SAFEMODE_PASSPHRASE': '',
-    # Content scan settings
-    'CONTENT_SCAN_OFFSET': 0,
-    'SCAN_VIDEO_FILES': True,
 }
 
 
@@ -130,7 +149,8 @@ class Config:
             'SETTINGS_PASSPHRASE',
             'TOGGLE_CONTENT_SCAN_PASSPHRASE',
             'TOGGLE_CONTENT_LOCK_PASSPHRASE',
-            'TOGGLE_SAFEMODE_PASSPHRASE',
+            'TOGGLE_KEYWORD_FILTER_PASSPHRASE',
+            'TOGGLE_SAFE_ONLY_PASSPHRASE',
             'THUMBNAIL_ASPECT_RATIO',
         ]
         for key in string_keys:
@@ -139,7 +159,8 @@ class Config:
 
         # Boolean values
         bool_keys = [
-            'SAFE_MODE_DEFAULT', 'CONTENT_SCAN_DEFAULT', 'METADATA_EXTRACTION',
+            'ENABLE_KEYWORD_FILTER_OPTION', 'ENABLE_CONTENT_SCAN_OPTION', 'ENABLE_CONTENT_LOCK_OPTION', 'ENABLE_SAFE_ONLY_OPTION',
+            'KEYWORD_FILTER_DEFAULT', 'SAFE_ONLY_DEFAULT', 'CONTENT_SCAN_DEFAULT', 'METADATA_EXTRACTION',
             'CONTENT_LOCK_DEFAULT', 'HIDE_ARCHIVE', 'SCAN_VIDEO_FILES',
         ]
         for key in bool_keys:

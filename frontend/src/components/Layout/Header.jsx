@@ -13,7 +13,7 @@ export default function Header({ currentPath }) {
   const toggles = useToggles();
   const { filterType, setFilterType, triggerRefresh } = useMediaFilter();
   const { isConnected } = useWebSocket();
-  
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
@@ -72,8 +72,15 @@ export default function Header({ currentPath }) {
           </nav>
         </div>
 
-        <div style={{ flex: 1 }}></div>
-
+        <div className="header-center">
+          <div className="toggles-group">
+            <div className="pill-segmented-control">
+              <button className={`pill-segment ${filterType === 'all' ? 'active' : ''}`} onClick={() => { setFilterType('all'); setMenuOpen(false); }}>All</button>
+              <button className={`pill-segment ${filterType === 'image' ? 'active' : ''}`} onClick={() => { setFilterType('image'); setMenuOpen(false); }}>Photos</button>
+              <button className={`pill-segment ${filterType === 'video' ? 'active' : ''}`} onClick={() => { setFilterType('video'); setMenuOpen(false); }}>Videos</button>
+            </div>
+          </div>
+        </div>
         <div className={`header-right ${menuOpen ? 'open' : ''}`}>
           <nav className="main-nav mobile-nav">
             <NavLink to="/" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
@@ -86,53 +93,68 @@ export default function Header({ currentPath }) {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg> Frame
             </NavLink>
           </nav>
-          
-          <div className="toggles-group">
-            <div className="filter-group header-filters">
-              <button className={`btn-filter ${filterType === 'all' ? 'active' : ''}`} onClick={() => { setFilterType('all'); setMenuOpen(false); }}>All</button>
-              <button className={`btn-filter ${filterType === 'image' ? 'active' : ''}`} onClick={() => { setFilterType('image'); setMenuOpen(false); }}>Photos</button>
-              <button className={`btn-filter ${filterType === 'video' ? 'active' : ''}`} onClick={() => { setFilterType('video'); setMenuOpen(false); }}>Videos</button>
-            </div>
-            
-            {/* View Toggles */}
-            <button 
-              className={`btn-pill-toggle ${toggles.safeMode ? 'active' : ''}`}
-              title="Hide NSFW content"
-              onClick={() => {
-                requireUnlock('safemode', authStatus?.safemode_passphrase_required && toggles.safeMode, () => {
-                  toggles.toggleSafeMode();
-                });
-              }}
-            >
-              Safe Mode
-            </button>
-            
-            <button 
-              className={`btn-pill-toggle ${toggles.contentLock ? 'active' : ''}`}
-              title="Hide content in NSFW folders"
-              onClick={() => {
-                requireUnlock('content_lock', authStatus?.content_lock_passphrase_required && toggles.contentLock, () => {
-                  toggles.toggleContentLock();
-                });
-              }}
-            >
-              Folder Lock
-            </button>
 
-            <button 
-              className={`btn-pill-toggle ${toggles.contentScan ? 'active' : ''}`}
-              title="Auto-detect & flag new files"
-              onClick={() => {
-                requireUnlock('content_scan', authStatus?.content_scan_passphrase_required && toggles.contentScan, () => {
-                  toggles.toggleServerContentScan();
-                });
-              }}
-            >
-              Content Scan
-            </button>
-            
+          <div className="toggles-group">
+            {authStatus?.safe_only_option_enabled && (
+              <button
+                className={`btn-pill-toggle ${toggles.safeOnly ? 'active' : ''}`}
+                title="Only show safe content"
+                onClick={() => {
+                  requireUnlock('safe_only', authStatus?.safe_only_passphrase_required && toggles.safeOnly, () => {
+                    toggles.toggleSafeOnly();
+                  });
+                }}
+              >
+                <span className="icon text-success">✅</span> {toggles.safeOnly ? 'Safe Only: ON' : 'Safe Only: OFF'}
+              </button>
+            )}
+
+            {authStatus?.keyword_filter_option_enabled && (
+              <button
+                className={`btn-pill-toggle ${toggles.keywordFilter ? 'active' : ''}`}
+                title="Toggle Keyword Filter"
+                onClick={() => {
+                  requireUnlock('keyword_filter', authStatus?.keyword_filter_passphrase_required && toggles.keywordFilter, () => {
+                    toggles.toggleKeywordFilter();
+                  });
+                }}
+              >
+                <span className="icon text-warning">🛡️</span> {toggles.keywordFilter ? 'Keyword: ON' : 'Keyword: OFF'}
+              </button>
+            )}
+
+
+
+            {authStatus?.content_lock_option_enabled && (
+              <button
+                className={`btn-pill-toggle ${toggles.contentLock ? 'active' : ''}`}
+                title="Hide content in NSFW folders"
+                onClick={() => {
+                  requireUnlock('content_lock', authStatus?.content_lock_passphrase_required && toggles.contentLock, () => {
+                    toggles.toggleContentLock();
+                  });
+                }}
+              >
+                <span className="icon text-danger">🔒</span> {toggles.contentLock ? 'Folder Lock: ON' : 'Folder Lock: OFF'}
+              </button>
+            )}
+
+            {authStatus?.content_scan_option_enabled && (
+              <button
+                className={`btn-pill-toggle ${toggles.contentScan ? 'active' : ''}`}
+                title="Auto-scan and flag new files"
+                onClick={() => {
+                  requireUnlock('content_scan', authStatus?.content_scan_passphrase_required && toggles.contentScan, () => {
+                    toggles.toggleServerContentScan();
+                  });
+                }}
+              >
+                <span className="icon text-info">👁️</span> {toggles.contentScan ? 'Content Scan: ON' : 'Content Scan: OFF'}
+              </button>
+            )}
+
             {currentPath === '/gallery' && (
-              <button 
+              <button
                 className="btn-pill-toggle"
                 onClick={() => {
                   window.dispatchEvent(new CustomEvent('scan-folder-request'));
@@ -145,7 +167,7 @@ export default function Header({ currentPath }) {
               </button>
             )}
           </div>
-          
+
           <div className="header-actions">
             <button className="btn btn-icon btn-ghost" onClick={handleRefreshClick} title="Refresh Media">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
@@ -158,7 +180,7 @@ export default function Header({ currentPath }) {
             </button>
           </div>
         </div>
-        
+
         <button className="mobile-menu-btn btn btn-icon btn-ghost" onClick={() => setMenuOpen(!menuOpen)}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
         </button>

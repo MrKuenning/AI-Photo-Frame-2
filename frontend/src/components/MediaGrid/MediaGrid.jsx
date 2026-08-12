@@ -158,8 +158,8 @@ export default function MediaGrid({
                     {(item.is_content_locked || item.is_nsfw || (item.subfolder || '').toLowerCase().includes('safe')) ? (
                       <div className="media-badges">
                         {item.is_content_locked ? <div className="nsfw-badge">NSFW</div> : null}
-                        {item.is_nsfw ? <div className="safemode-badge">Safe Mode</div> : null}
-                        {(item.subfolder || '').toLowerCase().includes('safe') ? <div className="safe-badge">SAFE</div> : null}
+                        {item.is_nsfw ? <div className="keyword-badge">Keyword</div> : null}
+                        {(item.subfolder || '').toLowerCase().includes('safe') ? <div className="safe-badge">Safe</div> : null}
                       </div>
                     ) : null}
                   </div>
