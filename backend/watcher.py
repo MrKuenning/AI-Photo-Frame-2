@@ -109,6 +109,21 @@ def _classify_file(file_path: str) -> dict:
 
 def _process_new_file(file_path: str, event_type: str = 'new_image'):
     """Process a new or modified file: insert into DB and notify clients"""
+    
+    # Wait for file to unlock (be fully written) before processing
+    retries = 0
+    while retries < 20:  # 10 seconds max wait
+        try:
+            os.rename(file_path, file_path)
+            time.sleep(0.1)  # Brief pause after unlock
+            break
+        except OSError:
+            time.sleep(0.5)
+            retries += 1
+
+    if not os.path.exists(file_path):
+        return
+
     info = _classify_file(file_path)
     if not info:
         return

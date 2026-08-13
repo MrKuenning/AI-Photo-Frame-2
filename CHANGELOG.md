@@ -2,6 +2,21 @@
 
 All notable changes to the AI Photo Frame application will be documented in this file.
 
+## [2.0.23] - 2026-08-13
+### Added
+- **Header Toggle Enable/Disable Customization**<br>
+  Added backend configuration options (`ENABLE_SAFE_ONLY_OPTION`, `ENABLE_KEYWORD_FILTER_OPTION`, `ENABLE_CONTENT_LOCK_OPTION`, `ENABLE_CONTENT_SCAN_OPTION`) allowing administrators to enable or disable individual header toggle buttons. Disabled buttons are completely hidden from the header interface.
+
+### Changed
+- **Gallery Toolbar Scan Button Relocation**<br>
+  Moved the "Content Scan Current Folder" button out of the global top navigation header menu and placed it directly on the Gallery page toolbar, located to the far right of the search box.
+
+### Documentation
+- **Updated README & Release Documentation**<br>
+  Updated `README.md` and `CHANGELOG.md` with complete documentation for Safe Only Mode, Keyword Filter renames, header toggle button customization options, and Gallery toolbar button layout updates.
+
+---
+
 ## [2.0.22] - 2026-08-12
 ### Added
 - **Safe Only Mode**<br>
@@ -18,6 +33,8 @@ All notable changes to the AI Photo Frame application will be documented in this
   Grouped all settings in `config.ini` and `config-example.ini` into logical categories for improved readability.
 
 ### Fixed
+- **Premature Video Playback Bug**<br>
+  Fixed an issue where the Gallery would instantly attempt to load and play newly generated videos the exact moment the file was created. Since the AI tool was still actively writing the video stream, the browser would fail to read the incomplete file, resulting in an empty, broken media player. The server now patiently waits for the file lock to be released before notifying the frontend that a new file is available.
 - **Hidden Passphrase Toggles Bug**<br>
   Fixed an issue where the Safe Only and Keyword Filter header toggles were incorrectly hidden if they required a passphrase. They now properly render and prompt for a passphrase on click, matching the behavior of other secure toggles.
 - **Startup Defaults Override Bug**<br>

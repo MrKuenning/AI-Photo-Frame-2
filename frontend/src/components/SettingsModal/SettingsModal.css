@@ -58,6 +58,7 @@
   color: var(--text-secondary);
   background: var(--bg-surface);
   min-height: 0;
+  flex: 1;
 }
 
 .settings-section {

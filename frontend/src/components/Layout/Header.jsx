@@ -153,19 +153,7 @@ export default function Header({ currentPath }) {
               </button>
             )}
 
-            {currentPath === '/gallery' && (
-              <button
-                className="btn-pill-toggle"
-                onClick={() => {
-                  window.dispatchEvent(new CustomEvent('scan-folder-request'));
-                  setMenuOpen(false);
-                }}
-                title="Scan current folder for NSFW content"
-                style={{ color: 'var(--primary)', borderColor: 'var(--primary)' }}
-              >
-                Scan Folder
-              </button>
-            )}
+
           </div>
 
           <div className="header-actions">

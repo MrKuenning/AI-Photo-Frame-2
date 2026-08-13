@@ -296,6 +296,15 @@ export default function Gallery() {
               />
             </form>
 
+            <button
+              className="btn-pill-toggle"
+              onClick={handleScanFolder}
+              title="Scan current folder for NSFW content"
+              style={{ color: 'var(--text-accent)', borderColor: 'var(--accent)', cursor: 'pointer', flexShrink: 0 }}
+            >
+              Content Scan Current Folder
+            </button>
+
             {scanProgress && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', flexGrow: 1, padding: '0 12px', color: 'var(--text-secondary)', minWidth: '250px', flexBasis: '250px' }}>
                 <div style={{ flexGrow: 1, background: 'var(--bg-elevated)', height: '6px', borderRadius: '3px', overflow: 'hidden', minWidth: '100px' }}>
