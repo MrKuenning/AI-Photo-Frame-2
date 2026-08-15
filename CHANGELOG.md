@@ -10,6 +10,8 @@ All notable changes to the AI Photo Frame application will be documented in this
   Added a new setting (`ENABLE_ARCHIVE_OPTION`) under the Settings Archive tab to toggle the visibility of the Archive buttons on the Gallery toolbar.
 - **Gallery Folder Recursive Toggle**<br>
   Added a quick toggle button (`🌲 Recursive: ON` / `📁 Recursive: OFF`) directly in the folder browser row to seamlessly switch between viewing media recursively across all subfolders or only displaying immediate folder contents.
+- **Isolated Python Virtual Environment (venv)**<br>
+  Updated `Photo Frame - Install.bat` to automatically create and initialize a dedicated Python virtual environment (`venv`). Updated `Photo Frame - Start Server.bat` and `Photo Frame - Update.bat` to prioritize and utilize the virtual environment for deterministic execution and to avoid system-level permission issues.
 - **Right-Aligned Gallery Action Buttons**<br>
   Aligned the Content Scan, Archive, and progress action buttons cleanly to the far right side of the Gallery toolbar.
 

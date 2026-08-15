@@ -18,29 +18,31 @@ if %ERRORLEVEL% NEQ 0 (
     exit /b %ERRORLEVEL%
 )
 
-:: Detect Python
-set "PYTHON_CMD="
-py -3 -c "import sys" >nul 2>&1
-if %ERRORLEVEL% EQU 0 (
-    set "PYTHON_CMD=py -3"
+:: Python environment detection & dependencies
+echo.
+echo [2/3] Checking Python dependencies...
+if exist "%~dp0venv\Scripts\python.exe" (
+    "%~dp0venv\Scripts\python.exe" -m pip install -r backend\requirements.txt
 ) else (
-    python -c "import sys" >nul 2>&1
+    set "PYTHON_CMD="
+    py -3 -c "import sys" >nul 2>&1
     if %ERRORLEVEL% EQU 0 (
-        set "PYTHON_CMD=python"
+        set "PYTHON_CMD=py -3"
     ) else (
-        for /d %%D in ("%LOCALAPPDATA%\Programs\Python\Python3*" "C:\Program Files\Python3*" "C:\Python3*") do (
-            if exist "%%~D\python.exe" (
-                set "PYTHON_CMD=%%~D\python.exe"
+        python -c "import sys" >nul 2>&1
+        if %ERRORLEVEL% EQU 0 (
+            set "PYTHON_CMD=python"
+        ) else (
+            for /d %%D in ("%LOCALAPPDATA%\Programs\Python\Python3*" "C:\Program Files\Python3*" "C:\Python3*") do (
+                if exist "%%~D\python.exe" (
+                    set "PYTHON_CMD="%%~D\python.exe""
+                )
             )
         )
     )
+    if not defined PYTHON_CMD set "PYTHON_CMD=python"
+    %PYTHON_CMD% -m pip install -r backend\requirements.txt
 )
-
-if not defined PYTHON_CMD set "PYTHON_CMD=python"
-
-echo.
-echo [2/3] Checking Python dependencies...
-%PYTHON_CMD% -m pip install -r backend\requirements.txt
 if %ERRORLEVEL% NEQ 0 (
     echo.
     echo [WARNING] Python dependencies installation encountered an issue.

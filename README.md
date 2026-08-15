@@ -133,7 +133,7 @@ cd AI-Photo-Frame
    ```cmd
    Photo Frame - Install.bat
    ```
-   *This script automatically checks Python, installs required backend packages, verifies UI assets, and interactively prompts you to set your AI image/video folder.*
+   *This script automatically checks Python, creates an isolated Python virtual environment (`venv`), installs required backend packages into it, verifies UI assets, and interactively prompts you to set your AI image/video folder.*
 
 2. Start the server:
    ```cmd
@@ -162,10 +162,19 @@ IMAGE_FOLDER = E:\AI\Output
 PORT = 5000
 ```
 
-#### 2. Install Backend Dependencies
+#### 2. Create Virtual Environment & Install Backend Dependencies
 ```bash
-cd backend
-pip install -r requirements.txt
+# Create virtual environment
+python -m venv venv
+
+# Activate virtual environment
+# Windows (cmd):
+venv\Scripts\activate
+# Linux / macOS:
+source venv/bin/activate
+
+# Install packages
+pip install -r backend/requirements.txt
 ```
 
 #### 3. Build Frontend Assets (Optional)

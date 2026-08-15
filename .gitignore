@@ -13,6 +13,11 @@ Frontend Compile.bat
 Frontend Start for Dev.bat
 discription.txt
 
+# Virtual Environments
+venv/
+.venv/
+env/
+
 # Config
 config.ini
 

@@ -9,7 +9,7 @@ echo.
 cd /d "%~dp0"
 
 :: 1. Detect Python
-echo [1/3] Checking Python environment...
+echo [1/4] Checking Python environment...
 set "PYTHON_CMD="
 
 py -3 -c "import sys" >nul 2>&1
@@ -40,11 +40,32 @@ if not defined PYTHON_CMD (
 
 for /f "tokens=*" %%v in ('%PYTHON_CMD% -c "import sys; print(f'Found Python {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}')"') do echo %%v
 
-:: 2. Install Python Dependencies
+:: 2. Set up Virtual Environment (venv)
 echo.
-echo [2/3] Installing Python dependencies...
-%PYTHON_CMD% -m pip install --upgrade pip
-%PYTHON_CMD% -m pip install -r backend\requirements.txt
+echo [2/4] Setting up Python virtual environment (venv)...
+if not exist "%~dp0venv\Scripts\python.exe" (
+    echo Creating isolated virtual environment in venv...
+    %PYTHON_CMD% -m venv "%~dp0venv"
+    if %ERRORLEVEL% NEQ 0 (
+        echo.
+        echo [ERROR] Failed to create virtual environment.
+        echo Please verify your Python installation supports the venv module.
+        echo.
+        pause
+        exit /b 1
+    )
+    echo Virtual environment created successfully.
+) else (
+    echo [OK] Existing virtual environment found.
+)
+
+set "VENV_PYTHON=%~dp0venv\Scripts\python.exe"
+
+:: 3. Install Python Dependencies
+echo.
+echo [3/4] Installing Python dependencies in virtual environment...
+"%VENV_PYTHON%" -m pip install --upgrade pip
+"%VENV_PYTHON%" -m pip install -r backend\requirements.txt
 if %ERRORLEVEL% NEQ 0 (
     echo.
     echo [WARNING] Some Python dependencies had installation warnings.
@@ -58,9 +79,9 @@ if not exist "config.ini" (
     echo config.ini created.
 )
 
-:: 3. Setup Frontend
+:: 4. Setup Frontend
 echo.
-echo [3/3] Setting up Frontend UI assets...
+echo [4/4] Setting up Frontend UI assets...
 
 if exist "%~dp0frontend\dist\index.html" (
     echo [OK] Pre-compiled frontend assets found and ready to use!
@@ -99,9 +120,9 @@ echo ============================================================
 echo   Installation of packages and assets is complete!
 echo ============================================================
 
-:: 4. Verify / Prompt for Monitored Image Folder
+:: 5. Verify / Prompt for Monitored Image Folder
 cd /d "%~dp0backend"
-%PYTHON_CMD% -c "import sys, os; sys.path.insert(0, '.'); from config import settings; settings.load()"
+"%VENV_PYTHON%" -c "import sys, os; sys.path.insert(0, '.'); from config import settings; settings.load()"
 cd /d "%~dp0"
 
 echo.
