@@ -82,6 +82,6 @@ if defined NPM_CMD (
 echo.
 echo ============================================================
 echo   Update Complete!
-echo   Run "Start Server.bat" to start the application.
+echo   Run "Photo Frame - Start Server.bat" to start the application.
 echo ============================================================
 pause

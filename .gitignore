@@ -11,6 +11,7 @@ dist-ssr
 *.local
 Frontend Compile.bat
 Frontend Start for Dev.bat
+discription.txt
 
 # Config
 config.ini

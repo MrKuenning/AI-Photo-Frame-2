@@ -120,47 +120,33 @@ The application includes comprehensive privacy and security features:
 git clone https://github.com/MrKuenning/AI-Photo-Frame
 ```
 
-### 2. Install Backend Dependencies
+### 2. Install & Configure
+Run the automated setup script from the root directory:
 ```bash
-cd backend
-pip install -r requirements.txt
+Photo Frame - Install.bat
 ```
+*(This installs Python dependencies, validates your monitored image folder, and verifies the frontend).*
 
-### 3. Install Frontend Dependencies & Build
+### 3. Run Server
+Run the startup script from the root directory:
 ```bash
-cd frontend
-npm install
-npm run build
-```
-*(On Windows, you can simply run the included `Frontend - Compile.bat` file from the root directory).*
-
-### 4. Configure
-Edit `backend/config.ini` (or copy `config-example.ini` if starting fresh) to set your monitored folder:
-```ini
-[App]
-IMAGE_FOLDER = E:\AI\Output
-PORT = 5002
-```
-
-### 5. Run Server
-Run the included batch file from the root directory:
-```bash
-Start Server.bat
+Photo Frame - Start Server.bat
 ```
 *(Or manually run `python main.py` inside the `backend/` directory).*
 
-### 6. Open Browser
-Navigate to: `http://localhost:5002`
+### 4. Open Browser
+Navigate to: `http://localhost:5002` (or the PORT configured in your `config.ini`).
 
 ## 📂 Project Structure
 
 ```text
 App1 - Photo Frame 6/
-├── Start Server.bat         # Production backend startup script
-├── Frontend - Compile.bat   # Production frontend build script
-├── CHANGELOG.md             # Detailed version history
+├── Photo Frame - Start Server.bat  # Production backend startup script
+├── Photo Frame - Install.bat       # Full environment setup script
+├── Photo Frame - Update.bat        # GitHub updater script
+├── CHANGELOG.md                    # Detailed version history
 │
-├── backend/                 # FastAPI Server Logic
+├── backend/                        # FastAPI Server Logic
 │   ├── main.py              # Application entry point
 │   ├── config.py            # Configuration management
 │   ├── database.py          # SQLite database and indexing

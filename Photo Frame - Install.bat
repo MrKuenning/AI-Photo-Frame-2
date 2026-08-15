@@ -9,7 +9,7 @@ echo.
 cd /d "%~dp0"
 
 :: 1. Detect Python
-echo [1/3] Checking Python environment...
+echo [1/4] Checking Python environment...
 set "PYTHON_CMD="
 
 py -3 -c "import sys" >nul 2>&1
@@ -42,7 +42,7 @@ for /f "tokens=*" %%v in ('%PYTHON_CMD% -c "import sys; print(f'Found Python {sy
 
 :: 2. Install Python Dependencies
 echo.
-echo [2/3] Installing Python dependencies...
+echo [2/4] Installing Python dependencies...
 %PYTHON_CMD% -m pip install --upgrade pip
 %PYTHON_CMD% -m pip install -r backend\requirements.txt
 if %ERRORLEVEL% NEQ 0 (
@@ -60,7 +60,7 @@ if not exist "config.ini" (
 
 :: 3. Setup Frontend
 echo.
-echo [3/3] Setting up Frontend UI assets...
+echo [3/4] Setting up Frontend UI assets...
 
 if exist "%~dp0frontend\dist\index.html" (
     echo [OK] Pre-compiled frontend assets found and ready to use!
@@ -94,12 +94,18 @@ if exist "%~dp0frontend\dist\index.html" (
     )
 )
 
+:: 4. Verify / Prompt for Monitored Image Folder
+echo.
+echo [4/4] Verifying monitored image folder...
+cd /d "%~dp0backend"
+%PYTHON_CMD% -c "import sys, os; sys.path.insert(0, '.'); from config import settings; settings.load()"
+cd /d "%~dp0"
+
 echo.
 echo ============================================================
 echo   Installation and Setup Complete!
 echo.
-echo   Next Steps:
-echo   1. Edit "config.ini" to set your custom image folder path.
-echo   2. Run "Start Server.bat" to start the application.
+echo   To launch Photo Frame, run:
+echo   "Photo Frame - Start Server.bat"
 echo ============================================================
 pause
