@@ -2,16 +2,16 @@
 
 All notable changes to the AI Photo Frame application will be documented in this file.
 
-## [2.0.24] - 2026-08-14
+## [2.1.0] - 2026-08-14
 ### Added
+- **Isolated Python Virtual Environment (venv)**<br>
+  Added automatic creation and management of an isolated Python virtual environment (`venv/`) across Windows batch scripts. `Photo Frame - Install.bat` initializes the virtual environment and installs all dependencies inside it; `Photo Frame - Start Server.bat` and `Photo Frame - Update.bat` prioritize the virtual environment for clean, reproducible executions and prevent Windows permission conflicts.
 - **Archive Current Folder & Archive All Actions**<br>
   Added dedicated "Archive Current Folder" and "Archive All" action buttons to the Gallery toolbar. "Archive Current Folder" moves and merges the active folder into `Archive/<currentFolder>`, preserving its full relative folder hierarchy while keeping other parent files intact. "Archive All" moves all root-adjacent folders and files into the `Archive/` directory.
 - **Enable Archive Function Setting**<br>
   Added a new setting (`ENABLE_ARCHIVE_OPTION`) under the Settings Archive tab to toggle the visibility of the Archive buttons on the Gallery toolbar.
 - **Gallery Folder Recursive Toggle**<br>
   Added a quick toggle button (`🌲 Recursive: ON` / `📁 Recursive: OFF`) directly in the folder browser row to seamlessly switch between viewing media recursively across all subfolders or only displaying immediate folder contents.
-- **Isolated Python Virtual Environment (venv)**<br>
-  Updated `Photo Frame - Install.bat` to automatically create and initialize a dedicated Python virtual environment (`venv`). Updated `Photo Frame - Start Server.bat` and `Photo Frame - Update.bat` to prioritize and utilize the virtual environment for deterministic execution and to avoid system-level permission issues.
 - **Mobile Menu Tap-Away & Backdrop Dismissal**<br>
   Enhanced the mobile navigation menu to automatically close when tapping outside the menu, tapping the glassmorphic backdrop overlay, navigating routes, or pressing the Escape key. Added animated open/close transitions and dynamic hamburger/close icons.
 - **Right-Aligned Gallery Action Buttons**<br>
