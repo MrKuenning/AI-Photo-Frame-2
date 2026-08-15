@@ -22,53 +22,69 @@ def open_shared_read(path: str):
     Open file for reading on Windows with FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE.
     This prevents Windows mandatory file locking while Python streams the file, allowing
     files to be flagged, moved, renamed, or deleted by this process or external AI tools.
-    On non-Windows platforms, falls back to standard open().
+    Gracefully falls back to standard open() if FILE_SHARE_DELETE is rejected (common on UNC/SMB network shares).
     """
     if sys.platform == 'win32':
-        from ctypes import wintypes
-        
-        GENERIC_READ = 0x80000000
-        FILE_SHARE_READ = 0x00000001
-        FILE_SHARE_WRITE = 0x00000002
-        FILE_SHARE_DELETE = 0x00000004
-        OPEN_EXISTING = 3
-        FILE_ATTRIBUTE_NORMAL = 0x00000080
-        
-        kernel32 = ctypes.windll.kernel32
         try:
-            ucrt = ctypes.CDLL('ucrtbase', use_errno=True)
+            from ctypes import wintypes
+            
+            GENERIC_READ = 0x80000000
+            FILE_SHARE_READ = 0x00000001
+            FILE_SHARE_WRITE = 0x00000002
+            FILE_SHARE_DELETE = 0x00000004
+            OPEN_EXISTING = 3
+            FILE_ATTRIBUTE_NORMAL = 0x00000080
+            
+            kernel32 = ctypes.windll.kernel32
+            try:
+                ucrt = ctypes.CDLL('ucrtbase', use_errno=True)
+            except Exception:
+                ucrt = ctypes.cdll.msvcrt
+            
+            kernel32.CreateFileW.argtypes = [
+                wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD,
+                ctypes.c_void_p, wintypes.DWORD, wintypes.DWORD, ctypes.c_void_p
+            ]
+            kernel32.CreateFileW.restype = ctypes.c_ssize_t
+            
+            # Primary attempt: open with full delete-sharing
+            handle = kernel32.CreateFileW(
+                str(path),
+                GENERIC_READ,
+                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                None,
+                OPEN_EXISTING,
+                FILE_ATTRIBUTE_NORMAL,
+                None
+            )
+            
+            # Secondary attempt (for SMB / UNC network shares that disallow FILE_SHARE_DELETE):
+            if handle == -1 or handle == (1 << 64) - 1 or handle == 0:
+                handle = kernel32.CreateFileW(
+                    str(path),
+                    GENERIC_READ,
+                    FILE_SHARE_READ | FILE_SHARE_WRITE,
+                    None,
+                    OPEN_EXISTING,
+                    FILE_ATTRIBUTE_NORMAL,
+                    None
+                )
+            
+            if handle == -1 or handle == (1 << 64) - 1 or handle == 0:
+                # Direct fallback to standard Python open for network paths
+                return open(path, 'rb')
+                
+            ucrt._open_osfhandle.argtypes = [ctypes.c_ssize_t, ctypes.c_int]
+            ucrt._open_osfhandle.restype = ctypes.c_int
+            
+            fd = ucrt._open_osfhandle(handle, os.O_RDONLY | os.O_BINARY)
+            if fd == -1:
+                kernel32.CloseHandle(handle)
+                return open(path, 'rb')
+                
+            return open(fd, 'rb')
         except Exception:
-            ucrt = ctypes.cdll.msvcrt
-        
-        kernel32.CreateFileW.argtypes = [
-            wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD,
-            ctypes.c_void_p, wintypes.DWORD, wintypes.DWORD, ctypes.c_void_p
-        ]
-        kernel32.CreateFileW.restype = ctypes.c_ssize_t
-        
-        handle = kernel32.CreateFileW(
-            str(path),
-            GENERIC_READ,
-            FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-            None,
-            OPEN_EXISTING,
-            FILE_ATTRIBUTE_NORMAL,
-            None
-        )
-        
-        if handle == -1 or handle == (1 << 64) - 1 or handle == 0:
-            err = kernel32.GetLastError()
-            raise OSError(err, f"Failed to open file with shared read access: {path}")
-            
-        ucrt._open_osfhandle.argtypes = [ctypes.c_ssize_t, ctypes.c_int]
-        ucrt._open_osfhandle.restype = ctypes.c_int
-        
-        fd = ucrt._open_osfhandle(handle, os.O_RDONLY | os.O_BINARY)
-        if fd == -1:
-            kernel32.CloseHandle(handle)
-            raise OSError(f"Failed to obtain file descriptor from handle for: {path}")
-            
-        return open(fd, 'rb')
+            return open(path, 'rb')
     else:
         return open(path, 'rb')
 
@@ -174,9 +190,14 @@ def create_shared_file_response(
                     break
                 bytes_remaining -= len(chunk)
                 yield chunk
+        except Exception as e:
+            print(f"[STREAM] Warning reading {file_path}: {e}")
         finally:
             if f:
-                f.close()
+                try:
+                    f.close()
+                except Exception:
+                    pass
 
     return StreamingResponse(
         file_stream(),

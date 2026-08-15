@@ -192,10 +192,19 @@ def serve_thumbnail(
 
     # For videos, serve original using non-blocking shared file response
     if item['media_type'] == 'video':
+        mimetype, _ = mimetypes.guess_type(file_path)
+        if not mimetype:
+            ext = os.path.splitext(file_path)[1].lower()
+            video_mimes = {
+                '.mp4': 'video/mp4', '.webm': 'video/webm',
+                '.mov': 'video/quicktime', '.avi': 'video/x-msvideo',
+                '.mkv': 'video/x-matroska', '.m4v': 'video/x-m4v'
+            }
+            mimetype = video_mimes.get(ext, 'video/mp4')
         range_header = request.headers.get('range')
         return create_shared_file_response(
             file_path,
-            media_type='video/mp4',
+            media_type=mimetype,
             range_header=range_header
         )
 

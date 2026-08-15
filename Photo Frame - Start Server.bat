@@ -1,8 +1,8 @@
 @echo off
 setlocal enabledelayedexpansion
-title Photo Frame 6 - Server
+title Photo Frame 2 - Server
 echo ============================================================
-echo   Photo Frame 6 - Starting Server...
+echo   Photo Frame 2 - Starting Server...
 echo ============================================================
 cd /d "%~dp0backend"
 
