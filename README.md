@@ -108,34 +108,94 @@ The application includes comprehensive privacy and security features:
 
 ## 📋 Requirements
 
-- Python 3.8 or higher
-- Node.js 18+ (for frontend compilation)
-- Modern web browser (Chrome, Firefox, Edge, Safari)
-- Windows, macOS, or Linux
+- **Python**: 3.10, 3.11, or 3.12 (64-bit recommended)
+  *(Note: Python 3.14 is currently pre-release and not yet supported by AI packages like NudeNet/ONNX).*
+  *Windows users: Ensure "Add python.exe to PATH" is checked during installation.*
+- **Node.js**: 18+ LTS *(Optional — only required if compiling or modifying frontend code from source; pre-compiled UI assets are included).*
+- **Operating System**: Windows 10/11, macOS, or Linux
+- **Web Browser**: Chrome, Firefox, Edge, Safari, or any modern Chromium browser
 
-## 🚀 Installation
+---
 
-### 1. Clone or Download
+## 🚀 Installation & Setup
+
+### 1. Clone the Repository
 ```bash
 git clone https://github.com/MrKuenning/AI-Photo-Frame
+cd AI-Photo-Frame
 ```
 
-### 2. Install & Configure
-Run the automated setup script from the root directory:
+---
+
+### Option A: Quick Automated Setup (Windows)
+
+1. Double-click and run:
+   ```cmd
+   Photo Frame - Install.bat
+   ```
+   *This script automatically checks Python, installs required backend packages, verifies UI assets, and interactively prompts you to set your AI image/video folder.*
+
+2. Start the server:
+   ```cmd
+   Photo Frame - Start Server.bat
+   ```
+
+3. Open your browser to `http://localhost:5000` (or your configured port).
+
+---
+
+### Option B: Manual Installation (Windows, macOS, Linux)
+
+#### 1. Setup Configuration
+Copy `config-example.ini` to `config.ini` in the project root:
 ```bash
-Photo Frame - Install.bat
-```
-*(This installs Python dependencies, validates your monitored image folder, and verifies the frontend).*
+# Windows
+copy config-example.ini config.ini
 
-### 3. Run Server
-Run the startup script from the root directory:
+# Linux / macOS
+cp config-example.ini config.ini
+```
+Open `config.ini` in a text editor and set your AI generation output folder:
+```ini
+[App]
+IMAGE_FOLDER = E:\AI\Output
+PORT = 5000
+```
+
+#### 2. Install Backend Dependencies
 ```bash
-Photo Frame - Start Server.bat
+cd backend
+pip install -r requirements.txt
 ```
-*(Or manually run `python main.py` inside the `backend/` directory).*
 
-### 4. Open Browser
-Navigate to: `http://localhost:5002` (or the PORT configured in your `config.ini`).
+#### 3. Build Frontend Assets (Optional)
+*Pre-compiled production assets are already included in `frontend/dist/`. If you are developing or modifying the React UI, compile it using:*
+```bash
+cd frontend
+npm install
+npm run build
+cd ..
+```
+
+#### 4. Launch the Server
+```bash
+cd backend
+python main.py
+```
+
+#### 5. Open Web Browser
+Navigate to `http://localhost:5000` (or the port defined in your `config.ini`).
+
+---
+
+## 🔄 Updating the App
+
+- **Windows Automated**: Run `Photo Frame - Update.bat` to pull the latest changes, update Python packages, and refresh UI assets.
+- **Manual**:
+  ```bash
+  git pull
+  pip install -r backend/requirements.txt
+  ```
 
 ## 📂 Project Structure
 
