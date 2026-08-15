@@ -188,19 +188,36 @@ class Config:
 
     def _prompt_for_image_folder(self):
         """Prompt user for image folder path"""
+        current_folder = self._data.get('IMAGE_FOLDER', '')
+        print("\n" + "=" * 60)
+        print("  STEP 2: CONFIGURATION SETUP - Set Monitored Folder")
+        print("=" * 60)
+        if current_folder:
+            print(f"\nThe configured folder path was not found on this computer:")
+            print(f"  -> '{current_folder}'")
+        else:
+            print(f"\nNo monitored folder is configured yet.")
+
+        print("\nPlease enter the full path to your AI image/video folder.")
+        print("Example: C:\\AI\\Images  or  D:\\SD_Output")
+        print("-" * 60)
+
         while True:
-            print(f"\n[SETUP] Monitor folder '{self._data['IMAGE_FOLDER']}' not found or invalid.")
-            print("[SETUP] Please enter the full path to the root directory you want to monitor:")
-            print("[SETUP] Example: E:\\AI\\Output")
             try:
-                new_path = input("> ").strip().strip('"').strip("'")
+                new_path = input("Enter Folder Path > ").strip().strip('"').strip("'")
                 if new_path and os.path.isdir(new_path):
-                    self._data['IMAGE_FOLDER'] = new_path
+                    self._data['IMAGE_FOLDER'] = os.path.abspath(new_path)
+                    print(f"\n[OK] Valid folder selected: '{self._data['IMAGE_FOLDER']}'")
+                    print("=" * 60 + "\n")
                     break
                 else:
-                    print("[SETUP] Error: That folder does not exist. Please enter a valid directory.")
+                    print(f"\n[ERROR] '{new_path}' is not a valid directory or does not exist.")
+                    print("Please double check the drive letter and folder path and try again:\n")
             except EOFError:
                 print("\n[SETUP] Input cancelled. Cannot start without a valid monitor folder.")
+                exit(1)
+            except KeyboardInterrupt:
+                print("\n[SETUP] Setup interrupted.")
                 exit(1)
 
     def _save_config(self, config: configparser.ConfigParser):
