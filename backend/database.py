@@ -276,6 +276,8 @@ def get_media_page(
         else:
             conditions.append("subfolder = ?")
             params.append(subfolder)
+    elif not recursive:
+        conditions.append("subfolder = ''")
 
     # Media type filter
     if media_type and media_type != 'all':
@@ -361,22 +363,23 @@ def get_latest(
     return _row_to_dict(row) if row else None
 
 
-def get_folders(parent: str = '') -> List[str]:
+def get_folders(parent: str = '', hide_archive: bool = False) -> List[str]:
     """Get immediate child folder names under a parent path"""
     conn = _get_connection()
+    archive_clause = " AND is_archived = 0" if hide_archive else ""
 
     if not parent:
         # Get top-level folders
-        rows = conn.execute(
-            "SELECT DISTINCT top_folder FROM media WHERE top_folder != '' ORDER BY top_folder"
-        ).fetchall()
-        return [row['top_folder'] for row in rows]
+        sql = f"SELECT DISTINCT top_folder FROM media WHERE top_folder != ''{archive_clause} ORDER BY top_folder"
+        rows = conn.execute(sql).fetchall()
+        folders = [row['top_folder'] for row in rows]
+        if hide_archive:
+            folders = [f for f in folders if f.lower() != 'archive']
+        return folders
     else:
         # Get child folders under parent
-        rows = conn.execute(
-            "SELECT DISTINCT subfolder FROM media WHERE subfolder LIKE ? ORDER BY subfolder",
-            (parent + '/%',)
-        ).fetchall()
+        sql = f"SELECT DISTINCT subfolder FROM media WHERE subfolder LIKE ?{archive_clause} ORDER BY subfolder"
+        rows = conn.execute(sql, (parent + '/%',)).fetchall()
 
         children = set()
         parent_depth = parent.count('/') + 1
@@ -384,12 +387,15 @@ def get_folders(parent: str = '') -> List[str]:
             parts = row['subfolder'].split('/')
             if len(parts) > parent_depth:
                 children.add(parts[parent_depth])
+        if hide_archive:
+            children = {c for c in children if c.lower() != 'archive'}
         return sorted(children)
 
 
-def get_sibling_folders(subfolder: str) -> List[str]:
+def get_sibling_folders(subfolder: str, hide_archive: bool = False) -> List[str]:
     """Get sibling folders at the same level as the given subfolder"""
     conn = _get_connection()
+    archive_clause = " AND is_archived = 0" if hide_archive else ""
 
     if '/' in subfolder:
         parent = '/'.join(subfolder.split('/')[:-1])
@@ -398,10 +404,8 @@ def get_sibling_folders(subfolder: str) -> List[str]:
         parent = ''
         pattern = '%'
 
-    rows = conn.execute(
-        "SELECT DISTINCT subfolder FROM media WHERE subfolder LIKE ? ORDER BY subfolder",
-        (pattern,)
-    ).fetchall()
+    sql = f"SELECT DISTINCT subfolder FROM media WHERE subfolder LIKE ?{archive_clause} ORDER BY subfolder"
+    rows = conn.execute(sql, (pattern,)).fetchall()
 
     siblings = set()
     target_depth = subfolder.count('/')
@@ -417,6 +421,8 @@ def get_sibling_folders(subfolder: str) -> List[str]:
             if parts and parts[0]:
                 siblings.add(parts[0])
 
+    if hide_archive:
+        siblings = {s for s in siblings if s.lower() != 'archive'}
     return sorted(siblings)
 
 

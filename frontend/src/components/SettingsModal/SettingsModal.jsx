@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { fetchSettings, saveSettings } from '../../utils/api';
 import { useToggles } from '../../hooks/useToggles';
+import { useAuth } from '../../hooks/useAuth';
 import './SettingsModal.css';
 
 const NUDENET_LABELS = [
@@ -16,6 +17,7 @@ const NUDENET_LABELS = [
 
 export default function SettingsModal({ onClose }) {
   const toggles = useToggles();
+  const { reloadStatus } = useAuth();
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -76,6 +78,10 @@ export default function SettingsModal({ onClose }) {
       }
       if (settings.THUMBNAIL_ASPECT_RATIO !== undefined) {
         toggles.updateThumbnailAspectRatio(settings.THUMBNAIL_ASPECT_RATIO);
+      }
+
+      if (reloadStatus) {
+        await reloadStatus();
       }
 
       onClose();
@@ -505,6 +511,15 @@ export default function SettingsModal({ onClose }) {
               <>
                 <div className="settings-section">
                   <h3><span className="icon">📦</span> Archive Settings</h3>
+
+                  <label className="toggle-switch form-group-inline mb-3">
+                    <input type="checkbox" name="ENABLE_ARCHIVE_OPTION" checked={settings.ENABLE_ARCHIVE_OPTION ?? true} onChange={handleChange} />
+                    <span className="toggle-track"></span>
+                    <div className="toggle-label-content">
+                      <strong>Enable Archive Function</strong>
+                      <small>Show Archive buttons in the gallery toolbar</small>
+                    </div>
+                  </label>
 
                   <label className="toggle-switch form-group-inline">
                     <input type="checkbox" name="HIDE_ARCHIVE" checked={!!settings.HIDE_ARCHIVE} onChange={handleChange} />

@@ -10,6 +10,7 @@ import threading
 import time
 import tempfile
 from typing import Optional, Generator, List, Dict, Any
+from file_utils import safe_move_file
 
 # ANSI Colors
 C_CYAN = "\033[96m"
@@ -365,12 +366,11 @@ def move_to_nsfw_folder(file_path: str) -> Optional[str]:
             dest_path = os.path.join(nsfw_folder, f"{base}_{counter}{ext}")
             counter += 1
     
-    try:
-        shutil.move(file_path, dest_path)
+    if safe_move_file(file_path, dest_path):
         print(f"📁 Moved to NSFW folder\n")
         return dest_path
-    except Exception as e:
-        print(f"[ContentScanner] ❌ Error moving file: {e}")
+    else:
+        print(f"[ContentScanner] ❌ Error moving file to NSFW folder: {file_path}")
         return None
 
 
@@ -442,12 +442,11 @@ def move_to_safe_folder(file_path: str) -> Optional[str]:
             dest_path = os.path.join(safe_folder, f"{base}_{counter}{ext}")
             counter += 1
     
-    try:
-        shutil.move(file_path, dest_path)
+    if safe_move_file(file_path, dest_path):
         print(f"📁 Moved to SAFE folder\n")
         return dest_path
-    except Exception as e:
-        print(f"[ContentScanner] ❌ Error moving file: {e}")
+    else:
+        print(f"[ContentScanner] ❌ Error moving file to SAFE folder: {file_path}")
         return None
 
 

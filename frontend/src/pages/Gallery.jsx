@@ -4,7 +4,7 @@ import { useToggles } from '../hooks/useToggles';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useMediaFilter } from '../hooks/useMediaFilter';
 import { useAuth } from '../hooks/useAuth';
-import { deleteMedia, flagMedia, unflagMedia, markSafe, unmarkSafe, scanFolder } from '../utils/api';
+import { deleteMedia, flagMedia, unflagMedia, markSafe, unmarkSafe, scanFolder, archiveFolder, archiveAll } from '../utils/api';
 import FolderBrowser from '../components/FolderBrowser/FolderBrowser';
 import MediaGrid from '../components/MediaGrid/MediaGrid';
 import HeroViewer from '../components/HeroViewer/HeroViewer';
@@ -23,6 +23,10 @@ export default function Gallery() {
   const [showMetadata, setShowMetadata] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [scanProgress, setScanProgress] = useState(null);
+  const [recursive, setRecursive] = useState(() => {
+    const saved = localStorage.getItem('gallery_recursive');
+    return saved !== null ? saved === 'true' : true;
+  });
 
   const {
     items,
@@ -38,7 +42,7 @@ export default function Gallery() {
     refresh
   } = useMediaList({
     subfolder: currentFolder,
-    recursive: true,
+    recursive: recursive,
     keyword_filter: toggles.keywordFilter,
     safe_only: toggles.safeOnly,
     content_lock: toggles.contentLock,
@@ -46,14 +50,23 @@ export default function Gallery() {
     media_type: filterType === 'all' ? undefined : filterType
   });
 
+  const handleToggleRecursive = () => {
+    setRecursive(prev => {
+      const next = !prev;
+      localStorage.setItem('gallery_recursive', String(next));
+      return next;
+    });
+  };
+
   // Apply view toggles to filters
   useEffect(() => {
     setFilter('keyword_filter', toggles.keywordFilter);
     setFilter('safe_only', toggles.safeOnly);
     setFilter('content_lock', toggles.contentLock);
     setFilter('media_type', filterType === 'all' ? undefined : filterType);
+    setFilter('recursive', recursive);
     setActiveItemIndex(-1); // Close viewer when filters change
-  }, [toggles.keywordFilter, toggles.safeOnly, toggles.contentLock, filterType, setFilter]);
+  }, [toggles.keywordFilter, toggles.safeOnly, toggles.contentLock, filterType, recursive, setFilter]);
 
   // Safety check for out of bounds index
   useEffect(() => {
@@ -82,7 +95,11 @@ export default function Gallery() {
       const matchesSubfolder = !filters.subfolder || newItem.subfolder === filters.subfolder;
       const matchesMediaType = !filters.media_type || filters.media_type === 'all' || newItem.media_type === filters.media_type;
 
-      if (matchesSubfolder && matchesMediaType) {
+      const matchesSafeOnly = !(toggles.safeOnly && !newItem.is_safe);
+      const matchesKeywordFilter = !(toggles.keywordFilter && newItem.is_nsfw);
+      const matchesContentLock = !(toggles.contentLock && newItem.is_content_locked);
+
+      if (matchesSubfolder && matchesMediaType && matchesSafeOnly && matchesKeywordFilter && matchesContentLock) {
         setActiveItemIndex(prev => {
           if (prev === -1) return -1;
 
@@ -98,9 +115,10 @@ export default function Gallery() {
 
           return prev;
         });
+        
+        prependItem(newItem);
       }
 
-      prependItem(newItem);
       clearLastMessage();
     } else if (lastMessage?.type === 'media_deleted') {
       removeItemByFilename(lastMessage.filename);
@@ -256,6 +274,51 @@ export default function Gallery() {
     }
   };
 
+  const isInsideArchive = currentFolder.toLowerCase() === 'archive' || currentFolder.toLowerCase().startsWith('archive/');
+
+  const handleArchiveCurrentFolder = async () => {
+    if (!currentFolder || isInsideArchive) return;
+    requireUnlock('archive', authStatus?.archive_passphrase_required, async () => {
+      if (!window.confirm(`Are you sure you want to archive "${currentFolder}" to Archive/${currentFolder}?`)) {
+        return;
+      }
+      try {
+        const res = await archiveFolder(currentFolder);
+        if (res.success) {
+          const parentFolder = currentFolder.includes('/') ? currentFolder.substring(0, currentFolder.lastIndexOf('/')) : '';
+          setCurrentFolder(parentFolder);
+          setFilter('subfolder', parentFolder);
+          refresh();
+        } else {
+          alert(res.error || "Failed to archive folder");
+        }
+      } catch (err) {
+        alert(`Error archiving folder: ${err.message}`);
+      }
+    });
+  };
+
+  const handleArchiveAll = async () => {
+    if (isInsideArchive) return;
+    requireUnlock('archive', authStatus?.archive_passphrase_required, async () => {
+      if (!window.confirm("Are you sure you want to move all folders and files into the Archive folder?")) {
+        return;
+      }
+      try {
+        const res = await archiveAll();
+        if (res.success) {
+          setCurrentFolder('');
+          setFilter('subfolder', '');
+          refresh();
+        } else {
+          alert(res.error || "Failed to archive all");
+        }
+      } catch (err) {
+        alert(`Error archiving: ${err.message}`);
+      }
+    });
+  };
+
   useEffect(() => {
     const handleScanRequest = () => {
       handleScanFolder();
@@ -272,6 +335,8 @@ export default function Gallery() {
           <FolderBrowser
             currentFolder={currentFolder}
             onFolderSelect={handleFolderSelect}
+            recursive={recursive}
+            onToggleRecursive={handleToggleRecursive}
           >
             <div className="slider-container" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Size:</label>
@@ -296,25 +361,51 @@ export default function Gallery() {
               />
             </form>
 
-            <button
-              className="btn-pill-toggle"
-              onClick={handleScanFolder}
-              title="Scan current folder for NSFW content"
-              style={{ color: 'var(--text-accent)', borderColor: 'var(--accent)', cursor: 'pointer', flexShrink: 0 }}
-            >
-              Content Scan Current Folder
-            </button>
+            <div className="gallery-action-buttons" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: 'auto', flexWrap: 'wrap' }}>
+              <button
+                className="btn-pill-toggle"
+                onClick={handleScanFolder}
+                title="Scan current folder for NSFW content"
+                style={{ color: 'var(--text-accent)', borderColor: 'var(--accent)', cursor: 'pointer', flexShrink: 0 }}
+              >
+                Content Scan Current Folder
+              </button>
 
-            {scanProgress && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', flexGrow: 1, padding: '0 12px', color: 'var(--text-secondary)', minWidth: '250px', flexBasis: '250px' }}>
-                <div style={{ flexGrow: 1, background: 'var(--bg-elevated)', height: '6px', borderRadius: '3px', overflow: 'hidden', minWidth: '100px' }}>
-                  <div style={{ width: `${scanProgress.total ? (scanProgress.processed / scanProgress.total) * 100 : 0}%`, background: 'var(--primary)', height: '100%', transition: 'width 0.2s' }}></div>
+              {authStatus?.archive_option_enabled && (
+                <>
+                  <button
+                    className="btn-pill-toggle"
+                    onClick={handleArchiveCurrentFolder}
+                    disabled={!currentFolder || isInsideArchive}
+                    title={!currentFolder ? "Select a folder to archive" : isInsideArchive ? "Already inside Archive" : `Archive "${currentFolder}" into Archive/${currentFolder}`}
+                    style={{ color: 'var(--warning)', borderColor: 'var(--warning)', cursor: (!currentFolder || isInsideArchive) ? 'not-allowed' : 'pointer', opacity: (!currentFolder || isInsideArchive) ? 0.5 : 1, flexShrink: 0 }}
+                  >
+                    Archive Current Folder
+                  </button>
+
+                  <button
+                    className="btn-pill-toggle"
+                    onClick={handleArchiveAll}
+                    disabled={isInsideArchive}
+                    title={isInsideArchive ? "Already inside Archive" : "Archive all folders and files into Archive"}
+                    style={{ color: 'var(--danger)', borderColor: 'var(--danger)', cursor: isInsideArchive ? 'not-allowed' : 'pointer', opacity: isInsideArchive ? 0.5 : 1, flexShrink: 0 }}
+                  >
+                    Archive All
+                  </button>
+                </>
+              )}
+
+              {scanProgress && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', padding: '0 12px', color: 'var(--text-secondary)', minWidth: '200px' }}>
+                  <div style={{ flexGrow: 1, background: 'var(--bg-elevated)', height: '6px', borderRadius: '3px', overflow: 'hidden', minWidth: '80px' }}>
+                    <div style={{ width: `${scanProgress.total ? (scanProgress.processed / scanProgress.total) * 100 : 0}%`, background: 'var(--primary)', height: '100%', transition: 'width 0.2s' }}></div>
+                  </div>
+                  <div style={{ whiteSpace: 'nowrap' }}>
+                    {scanProgress.processed}/{scanProgress.total} checked • {scanProgress.moved} flagged
+                  </div>
                 </div>
-                <div style={{ whiteSpace: 'nowrap' }}>
-                  {scanProgress.processed}/{scanProgress.total} checked • {scanProgress.moved} flagged
-                </div>
-              </div>
-            )}
+              )}
+            </div>
           </FolderBrowser>
         </div>
       )}

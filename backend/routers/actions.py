@@ -18,6 +18,7 @@ from config import settings
 import database as db
 import content_scanner
 from routers.auth import has_action_permission
+from file_utils import safe_move_file
 
 router = APIRouter(tags=["actions"])
 
@@ -32,6 +33,9 @@ class SaveFrameRequest(BaseModel):
 
 class ScanFolderRequest(BaseModel):
     subfolder: str = ''
+
+class ArchiveFolderRequest(BaseModel):
+    subfolder: str
 
 
 # ============================================
@@ -129,7 +133,8 @@ def unflag_nsfw(media_id: int, request: Request):
                 dest_path = os.path.join(parent_folder, f"{base}_{counter}{ext}")
                 counter += 1
 
-        shutil.move(file_path, dest_path)
+        if not safe_move_file(file_path, dest_path):
+            raise HTTPException(status_code=500, detail="Failed to move file out of NSFW folder")
         
         # Determine new subfolder
         new_subfolder = os.path.basename(parent_folder) if parent_folder != settings.get('IMAGE_FOLDER') else ''
@@ -149,6 +154,8 @@ def unflag_nsfw(media_id: int, request: Request):
         
         print(f"🟩 [UNFLAG] Moved out of NSFW: {file_name}\n")
         return {"success": True, "message": "File unflagged", "new_path": dest_path}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -216,8 +223,8 @@ def unmark_safe(media_id: int, request: Request):
                 dest_path = os.path.join(parent_folder, f"{base}_{counter}{ext}")
                 counter += 1
 
-        import shutil
-        shutil.move(file_path, dest_path)
+        if not safe_move_file(file_path, dest_path):
+            raise HTTPException(status_code=500, detail="Failed to move file out of SAFE folder")
         
         # Determine new subfolder
         new_subfolder = os.path.basename(parent_folder) if parent_folder != settings.get('IMAGE_FOLDER') else ''
@@ -333,6 +340,7 @@ def archive_files(request: Request):
 
     # Run archive in background
     def run_archive():
+        import watcher
         moved = 0
         for folder_name in folders_to_archive:
             src = os.path.join(image_folder, folder_name)
@@ -340,15 +348,12 @@ def archive_files(request: Request):
             try:
                 if os.path.exists(dst):
                     _merge_folders(src, dst)
-                    try:
-                        shutil.rmtree(src)
-                    except Exception:
-                        pass
                 else:
-                    shutil.move(src, dst)
+                    if not safe_move_file(src, dst):
+                        _merge_folders(src, dst)
                 moved += 1
             except Exception as e:
-                print(f"[Archive] Error: {e}")
+                print(f"[Archive All] Error: {e}")
 
         for file_name in files_to_archive:
             src = os.path.join(image_folder, file_name)
@@ -357,19 +362,63 @@ def archive_files(request: Request):
                 if os.path.exists(dst):
                     base, ext = os.path.splitext(file_name)
                     dst = os.path.join(archive_folder, f"{base}_{int(time.time())}{ext}")
-                shutil.move(src, dst)
-                moved += 1
+                if safe_move_file(src, dst):
+                    moved += 1
             except Exception as e:
-                print(f"[Archive] Error: {e}")
+                print(f"[Archive All] Error: {e}")
 
-        print(f"📦 [Archive] Complete! Moved {moved}/{total} items")
+        db.clean_missing_media()
+        watcher.index_folder(image_folder)
+        print(f"📦 [Archive All] Complete! Moved {moved}/{total} items")
 
     threading.Thread(target=run_archive, daemon=True).start()
     return {"success": True, "message": f"Archiving {total} items..."}
 
 
+@router.post("/archive-folder")
+def archive_folder(body: ArchiveFolderRequest, request: Request):
+    """Move a specific subfolder into Archive preserving relative directory structure"""
+    if not has_action_permission(request, 'archive'):
+        raise HTTPException(status_code=403, detail="Permission denied")
+
+    subfolder = body.subfolder.strip('/\\').replace('\\', '/')
+    if not subfolder:
+        raise HTTPException(status_code=400, detail="No folder specified")
+
+    parts = [p.lower() for p in subfolder.split('/') if p]
+    if 'archive' in parts:
+        raise HTTPException(status_code=400, detail="Folder is already in Archive")
+
+    image_folder = settings.get('IMAGE_FOLDER')
+    src_dir = os.path.join(image_folder, subfolder.replace('/', os.sep))
+    dst_dir = os.path.join(image_folder, 'Archive', subfolder.replace('/', os.sep))
+
+    if not os.path.exists(src_dir) or not os.path.isdir(src_dir):
+        raise HTTPException(status_code=404, detail="Source folder not found")
+
+    def run_archive_folder():
+        import watcher
+        print(f"📦 [Archive Folder] Archiving {subfolder} -> Archive/{subfolder}...")
+        try:
+            if os.path.exists(dst_dir):
+                _merge_folders(src_dir, dst_dir)
+            else:
+                os.makedirs(os.path.dirname(dst_dir), exist_ok=True)
+                if not safe_move_file(src_dir, dst_dir):
+                    _merge_folders(src_dir, dst_dir)
+
+            db.clean_missing_media()
+            watcher.index_folder(image_folder)
+            print(f"📦 [Archive Folder] Complete for {subfolder}")
+        except Exception as e:
+            print(f"❌ [Archive Folder] Error: {e}")
+
+    threading.Thread(target=run_archive_folder, daemon=True).start()
+    return {"success": True, "message": f"Archiving {subfolder} to Archive/{subfolder}..."}
+
+
 def _merge_folders(src: str, dst: str):
-    """Recursively merge src directory into dst"""
+    """Recursively merge src directory into dst and remove src directory"""
     os.makedirs(dst, exist_ok=True)
     for item in os.listdir(src):
         s = os.path.join(src, item)
@@ -378,12 +427,24 @@ def _merge_folders(src: str, dst: str):
             if os.path.exists(d):
                 _merge_folders(s, d)
             else:
-                shutil.move(s, d)
+                safe_move_file(s, d)
         else:
             if os.path.exists(d):
                 base, ext = os.path.splitext(item)
-                d = os.path.join(dst, f"{base}_{int(time.time())}{ext}")
-            shutil.move(s, d)
+                counter = 1
+                d_new = os.path.join(dst, f"{base}_{int(time.time())}{ext}")
+                while os.path.exists(d_new):
+                    d_new = os.path.join(dst, f"{base}_{int(time.time())}_{counter}{ext}")
+                    counter += 1
+                d = d_new
+            safe_move_file(s, d)
+    try:
+        if os.path.exists(src) and not os.listdir(src):
+            os.rmdir(src)
+        elif os.path.exists(src):
+            shutil.rmtree(src, ignore_errors=True)
+    except Exception:
+        pass
 
 
 # ============================================

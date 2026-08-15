@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { fetchFolders, fetchChildFolders } from '../../utils/api';
+import { useAuth } from '../../hooks/useAuth';
 import './FolderBrowser.css';
 
-export default function FolderBrowser({ currentFolder, onFolderSelect, children }) {
+export default function FolderBrowser({ currentFolder, onFolderSelect, recursive, onToggleRecursive, children }) {
+  const { authStatus } = useAuth();
   const [folders, setFolders] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -18,12 +20,15 @@ export default function FolderBrowser({ currentFolder, onFolderSelect, children 
       
     apiCall
       .then(data => {
-        // Handle both API response formats
-        setFolders(data.folders || data.children || []);
+        let rawFolders = data.folders || data.children || [];
+        if (authStatus?.hide_archive) {
+          rawFolders = rawFolders.filter(f => f.toLowerCase() !== 'archive');
+        }
+        setFolders(rawFolders);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [currentFolder]);
+  }, [currentFolder, authStatus?.hide_archive]);
 
   // Build breadcrumbs
   const breadcrumbs = [];
@@ -55,7 +60,6 @@ export default function FolderBrowser({ currentFolder, onFolderSelect, children 
   return (
     <div className="folder-browser">
       {/* Breadcrumbs */}
-      {/* Breadcrumbs */}
       <div className="breadcrumbs">
         <div className="breadcrumb-path">
           <button 
@@ -85,25 +89,38 @@ export default function FolderBrowser({ currentFolder, onFolderSelect, children 
         )}
       </div>
 
-      {/* Folder List */}
-      <div className="folder-list">
-        {loading ? (
-          <div className="folder-loader"><div className="spinner"></div></div>
-        ) : folders.length > 0 ? (
-          folders.map(folder => (
-            <button 
-              key={folder} 
-              className="folder-item glass"
-              onClick={() => handleFolderClick(folder)}
-            >
-              <span className="folder-icon" style={{ display: 'flex', alignItems: 'center' }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-              </span>
-              <span className="folder-name">{folder}</span>
-            </button>
-          ))
-        ) : (
-          currentFolder && <div className="no-folders">No subfolders</div>
+      {/* Folder List & Options */}
+      <div className="folder-row">
+        <div className="folder-list">
+          {loading ? (
+            <div className="folder-loader"><div className="spinner"></div></div>
+          ) : folders.length > 0 ? (
+            folders.map(folder => (
+              <button 
+                key={folder} 
+                className="folder-item glass"
+                onClick={() => handleFolderClick(folder)}
+              >
+                <span className="folder-icon" style={{ display: 'flex', alignItems: 'center' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                </span>
+                <span className="folder-name">{folder}</span>
+              </button>
+            ))
+          ) : (
+            currentFolder && <div className="no-folders">No subfolders</div>
+          )}
+        </div>
+
+        {onToggleRecursive && (
+          <button
+            className={`recursive-toggle-btn ${recursive ? 'active' : ''}`}
+            onClick={onToggleRecursive}
+            title={recursive ? "Recursive view ON (showing content from this folder and all subfolders)" : "Recursive view OFF (showing only immediate content in this folder)"}
+          >
+            <span className="toggle-indicator">{recursive ? '🌲' : '📁'}</span>
+            <span>Recursive: {recursive ? 'ON' : 'OFF'}</span>
+          </button>
         )}
       </div>
     </div>

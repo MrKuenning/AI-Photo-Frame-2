@@ -130,6 +130,17 @@ export function archiveMedia() {
   return request('/actions/archive', { method: 'POST' });
 }
 
+export function archiveAll() {
+  return request('/actions/archive', { method: 'POST' });
+}
+
+export function archiveFolder(subfolder) {
+  return request('/actions/archive-folder', {
+    method: 'POST',
+    body: JSON.stringify({ subfolder }),
+  });
+}
+
 export function scanFolder(subfolder = '') {
   return request('/actions/scan-folder', {
     method: 'POST',

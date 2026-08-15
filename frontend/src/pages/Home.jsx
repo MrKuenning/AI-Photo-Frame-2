@@ -67,12 +67,25 @@ export default function Home() {
   // Handle WebSocket updates
   useEffect(() => {
     if (lastMessage?.type === 'new_image') {
-      const isNewest = mediaListRef.current.length === 0 || lastMessage.data.mod_time > mediaListRef.current[0].mod_time;
+      const newItem = lastMessage.data;
+      
+      // Do not add the item if it violates any active filters
+      if (
+        (toggles.keywordFilter && newItem.is_nsfw) || 
+        (toggles.contentLock && newItem.is_content_locked) ||
+        (toggles.safeOnly && !newItem.is_safe) ||
+        (filterType !== 'all' && newItem.media_type !== filterType)
+      ) {
+        clearLastMessage();
+        return;
+      }
+
+      const isNewest = mediaListRef.current.length === 0 || newItem.mod_time > mediaListRef.current[0].mod_time;
       
       setSelectedIndex(prev => {
         if (isNewest) return 0;
         if (prev !== -1) {
-          const insertIndex = mediaListRef.current.findIndex(item => lastMessage.data.mod_time >= item.mod_time);
+          const insertIndex = mediaListRef.current.findIndex(item => newItem.mod_time >= item.mod_time);
           if (insertIndex !== -1 && insertIndex <= prev) {
             return prev + 1;
           }
@@ -80,7 +93,7 @@ export default function Home() {
         return prev;
       });
       
-      prependItem(lastMessage.data);
+      prependItem(newItem);
       clearLastMessage();
     } else if (lastMessage?.type === 'media_deleted') {
       removeItemByFilename(lastMessage.filename);

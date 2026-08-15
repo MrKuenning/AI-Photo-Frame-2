@@ -10,6 +10,7 @@ import json
 from PIL import Image
 from PIL.ExifTags import TAGS
 import subprocess
+from file_utils import open_shared_read
 
 # Disable Pillow's decompression bomb protection for very large AI images
 Image.MAX_IMAGE_PIXELS = None
@@ -51,7 +52,7 @@ def _extract_from_jpeg(file_path):
     result = {'prompt': None, 'negative_prompt': None, 'seed': None, 'model': None, 'dimensions': None}
     
     try:
-        with Image.open(file_path) as img:
+        with open_shared_read(file_path) as f, Image.open(f) as img:
             # Get dimensions
             result['dimensions'] = f"{img.width}x{img.height}"
             
@@ -200,7 +201,7 @@ def _extract_from_png(file_path):
     result = {'prompt': None, 'negative_prompt': None, 'seed': None, 'model': None, 'dimensions': None}
     
     try:
-        with Image.open(file_path) as img:
+        with open_shared_read(file_path) as f, Image.open(f) as img:
             # Get dimensions
             result['dimensions'] = f"{img.width}x{img.height}"
             
@@ -237,7 +238,7 @@ def _extract_from_webp(file_path):
     result = {'prompt': None, 'negative_prompt': None, 'seed': None, 'model': None, 'dimensions': None}
     
     try:
-        with Image.open(file_path) as img:
+        with open_shared_read(file_path) as f, Image.open(f) as img:
             # Get dimensions
             result['dimensions'] = f"{img.width}x{img.height}"
             

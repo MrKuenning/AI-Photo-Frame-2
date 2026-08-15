@@ -69,6 +69,7 @@ def get_settings(request: Request):
         "ENABLE_SAFE_ONLY_OPTION": settings.get('ENABLE_SAFE_ONLY_OPTION', True),
         "ENABLE_CONTENT_SCAN_OPTION": settings.get('ENABLE_CONTENT_SCAN_OPTION', True),
         "ENABLE_CONTENT_LOCK_OPTION": settings.get('ENABLE_CONTENT_LOCK_OPTION', True),
+        "ENABLE_ARCHIVE_OPTION": settings.get('ENABLE_ARCHIVE_OPTION', True),
         "HIDE_ARCHIVE": settings.get('HIDE_ARCHIVE', False),
         "SCAN_VIDEO_FILES": settings.get('SCAN_VIDEO_FILES', True),
         "THUMBNAIL_ASPECT_RATIO": settings.get('THUMBNAIL_ASPECT_RATIO', 'square'),

@@ -119,6 +119,8 @@ def auth_status(request: Request):
         "content_scan_option_enabled": settings.get('ENABLE_CONTENT_SCAN_OPTION', True),
         "content_lock_option_enabled": settings.get('ENABLE_CONTENT_LOCK_OPTION', True),
         "safe_only_option_enabled": settings.get('ENABLE_SAFE_ONLY_OPTION', True),
+        "archive_option_enabled": settings.get('ENABLE_ARCHIVE_OPTION', True),
+        "hide_archive": settings.get('HIDE_ARCHIVE', False),
     }
 
 

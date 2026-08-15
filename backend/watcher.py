@@ -186,14 +186,10 @@ def _extract_metadata_for_file(file_path: str):
         while retries < 5:
             try:
                 os.rename(file_path, file_path)
-                # SUCCESS: The file is unlocked from data writing.
-                # However, tools like shutil.copy2 or Windows Explorer apply metadata (timestamps) 
-                # *after* closing the file. We MUST wait a few seconds before reading it, 
-                # otherwise ffprobe will lock it and cause the AI tool to crash and delete the file.
-                time.sleep(3.0)
+                time.sleep(0.3)
                 break
             except OSError:
-                time.sleep(1)
+                time.sleep(0.5)
                 retries += 1
         else:
             # File is still locked after retries. Abort for now.

@@ -88,7 +88,14 @@ export function useMediaList(initialFilters = {}) {
     if (!newItem) return false;
     
     // Only prepend if it matches the current filters (e.g. subfolder)
-    if (filters.subfolder && newItem.subfolder !== filters.subfolder) return false;
+    if (filters.subfolder) {
+      const isMatch = filters.recursive
+        ? (newItem.subfolder === filters.subfolder || (newItem.subfolder || '').startsWith(filters.subfolder + '/'))
+        : (newItem.subfolder === filters.subfolder);
+      if (!isMatch) return false;
+    } else if (filters.recursive === false) {
+      if (newItem.subfolder) return false;
+    }
     if (filters.media_type && filters.media_type !== 'all' && newItem.media_type !== filters.media_type) return false;
     if (filters.safe_mode && newItem.is_nsfw) return false;
     if (filters.content_lock && newItem.is_content_locked) return false;
@@ -162,7 +169,14 @@ export function useMediaList(initialFilters = {}) {
   const filteredItems = useMemo(() => {
     return items.filter(item => {
       if (filters.media_type && filters.media_type !== 'all' && item.media_type !== filters.media_type) return false;
-      if (filters.subfolder && item.subfolder !== filters.subfolder) return false;
+      if (filters.subfolder) {
+        const isMatch = filters.recursive
+          ? (item.subfolder === filters.subfolder || (item.subfolder || '').startsWith(filters.subfolder + '/'))
+          : (item.subfolder === filters.subfolder);
+        if (!isMatch) return false;
+      } else if (filters.recursive === false) {
+        if (item.subfolder) return false;
+      }
       if (filters.safe_mode && item.is_nsfw) return false;
       if (filters.content_lock && item.is_content_locked) return false;
       return true;

@@ -7,7 +7,7 @@ import io
 import mimetypes
 from typing import Optional
 
-from fastapi import APIRouter, Query, Response, HTTPException
+from fastapi import APIRouter, Query, Response, HTTPException, Request
 from fastapi.responses import FileResponse, StreamingResponse
 from PIL import Image
 
@@ -17,6 +17,7 @@ Image.MAX_IMAGE_PIXELS = None
 from config import settings
 import database as db
 from metadata_extractor import extract_embedded_metadata
+from file_utils import create_shared_file_response, open_shared_read
 
 router = APIRouter(tags=["media"])
 
@@ -133,8 +134,8 @@ def get_media_metadata(media_id: int):
 # ============================================
 
 @router.get("/media/{media_id}/file")
-def serve_media_file(media_id: int):
-    """Serve the original media file with range request support for video"""
+def serve_media_file(media_id: int, request: Request):
+    """Serve the original media file with non-blocking range request support for video"""
     item = db.get_by_id(media_id)
     if not item:
         raise HTTPException(status_code=404, detail="Media not found")
@@ -155,10 +156,12 @@ def serve_media_file(media_id: int):
         }
         mimetype = video_mimes.get(ext, 'application/octet-stream')
 
-    return FileResponse(
+    range_header = request.headers.get('range')
+    return create_shared_file_response(
         file_path,
         media_type=mimetype,
         filename=item['filename'],
+        range_header=range_header
     )
 
 
@@ -169,13 +172,14 @@ def serve_media_file(media_id: int):
 @router.get("/media/{media_id}/thumb")
 def serve_thumbnail(
     media_id: int,
+    request: Request,
     width: int = Query(300, ge=50, le=800),
     height: int = Query(300, ge=50, le=800),
 ):
     """
     Serve an in-memory resized thumbnail of an image.
     No files are written to disk — the resize happens in RAM.
-    For videos, returns a placeholder or the first frame if possible.
+    For videos, streams non-blocking video data using shared read handle.
     """
     item = db.get_by_id(media_id)
     if not item:
@@ -186,12 +190,17 @@ def serve_thumbnail(
         db.delete_by_id(media_id)
         raise HTTPException(status_code=404, detail="File not found on disk")
 
-    # For videos, just serve the original (let the browser handle it)
+    # For videos, serve original using non-blocking shared file response
     if item['media_type'] == 'video':
-        return FileResponse(file_path, media_type='video/mp4')
+        range_header = request.headers.get('range')
+        return create_shared_file_response(
+            file_path,
+            media_type='video/mp4',
+            range_header=range_header
+        )
 
     try:
-        with Image.open(file_path) as img:
+        with open_shared_read(file_path) as f, Image.open(f) as img:
             # Convert to RGB if necessary (handles RGBA, P mode, etc.)
             if img.mode in ('RGBA', 'P', 'LA'):
                 img = img.convert('RGB')
@@ -220,23 +229,29 @@ def serve_thumbnail(
 # ============================================
 
 @router.get("/folders")
-def get_folders(parent: str = Query('')):
+def get_folders(parent: str = Query(''), hide_archive: bool = Query(False)):
     """Get folder listing for navigation"""
-    folders = db.get_folders(parent)
+    if settings.get('HIDE_ARCHIVE', False):
+        hide_archive = True
+    folders = db.get_folders(parent, hide_archive=hide_archive)
     return {"folders": folders}
 
 
 @router.get("/folders/siblings")
-def get_sibling_folders(subfolder: str = Query('')):
+def get_sibling_folders(subfolder: str = Query(''), hide_archive: bool = Query(False)):
     """Get sibling folders at the same level"""
+    if settings.get('HIDE_ARCHIVE', False):
+        hide_archive = True
     if not subfolder:
         return {"siblings": []}
-    siblings = db.get_sibling_folders(subfolder)
+    siblings = db.get_sibling_folders(subfolder, hide_archive=hide_archive)
     return {"siblings": siblings}
 
 
 @router.get("/folders/children")
-def get_child_folders(subfolder: str = Query('')):
+def get_child_folders(subfolder: str = Query(''), hide_archive: bool = Query(False)):
     """Get immediate child folders"""
-    children = db.get_folders(subfolder)
+    if settings.get('HIDE_ARCHIVE', False):
+        hide_archive = True
+    children = db.get_folders(subfolder, hide_archive=hide_archive)
     return {"children": children}

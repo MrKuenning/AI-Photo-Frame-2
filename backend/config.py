@@ -42,6 +42,7 @@ DEFAULTS = {
     # Feature Toggles
     'METADATA_EXTRACTION': True,
     'HIDE_ARCHIVE': False,
+    'ENABLE_ARCHIVE_OPTION': True,
     
     # Keyword Filter Settings
     'ENABLE_KEYWORD_FILTER_OPTION': True,
@@ -160,6 +161,7 @@ class Config:
         # Boolean values
         bool_keys = [
             'ENABLE_KEYWORD_FILTER_OPTION', 'ENABLE_CONTENT_SCAN_OPTION', 'ENABLE_CONTENT_LOCK_OPTION', 'ENABLE_SAFE_ONLY_OPTION',
+            'ENABLE_ARCHIVE_OPTION',
             'KEYWORD_FILTER_DEFAULT', 'SAFE_ONLY_DEFAULT', 'CONTENT_SCAN_DEFAULT', 'METADATA_EXTRACTION',
             'CONTENT_LOCK_DEFAULT', 'HIDE_ARCHIVE', 'SCAN_VIDEO_FILES',
         ]
@@ -202,20 +204,64 @@ class Config:
                 exit(1)
 
     def _save_config(self, config: configparser.ConfigParser):
-        """Save current configuration to config.ini"""
+        """Save current configuration to config.ini, preserving comments and layout"""
         try:
-            if 'App' not in config:
-                config['App'] = {}
+            # Read existing lines if the file exists
+            lines = []
+            if os.path.exists(self._config_path):
+                with open(self._config_path, 'r') as f:
+                    lines = f.readlines()
+            
+            # Map config keys to values to save
+            data_to_save = {}
             for key, value in self._data.items():
                 if isinstance(value, list):
-                    config['App'][key] = ', '.join(str(v) for v in value)
+                    data_to_save[key.lower()] = ', '.join(str(v) for v in value)
                 elif isinstance(value, bool):
-                    config['App'][key] = 'true' if value else 'false'
+                    data_to_save[key.lower()] = 'true' if value else 'false'
                 else:
-                    config['App'][key] = str(value)
-
+                    data_to_save[key.lower()] = str(value)
+            
+            new_lines = []
+            in_app_section = False
+            keys_written = set()
+            
+            for line in lines:
+                stripped = line.strip()
+                if stripped == '[App]':
+                    in_app_section = True
+                    new_lines.append(line)
+                    continue
+                elif stripped.startswith('['):
+                    in_app_section = False
+                    new_lines.append(line)
+                    continue
+                
+                if in_app_section and '=' in line and not stripped.startswith('#') and not stripped.startswith(';'):
+                    key_part, _ = line.split('=', 1)
+                    key = key_part.strip().lower()
+                    
+                    if key in data_to_save:
+                        prefix = line[:line.find(key_part)]
+                        new_lines.append(f"{prefix}{key_part}= {data_to_save[key]}\n")
+                        keys_written.add(key)
+                        continue
+                
+                new_lines.append(line)
+            
+            # If [App] section was not found, create it
+            if not any(line.strip() == '[App]' for line in lines):
+                if new_lines and not new_lines[-1].endswith('\n'):
+                    new_lines[-1] += '\n'
+                new_lines.append('[App]\n')
+            
+            # Append any keys that weren't in the file
+            for key, value in data_to_save.items():
+                if key not in keys_written:
+                    new_lines.append(f"{key} = {value}\n")
+                    
             with open(self._config_path, 'w') as f:
-                config.write(f)
+                f.writelines(new_lines)
             print(f"[SETUP] Saved configuration to {self._config_path}")
         except Exception as e:
             print(f"[SETUP] Error saving config: {e}")

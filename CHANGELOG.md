@@ -2,6 +2,27 @@
 
 All notable changes to the AI Photo Frame application will be documented in this file.
 
+## [2.0.24] - 2026-08-14
+### Added
+- **Archive Current Folder & Archive All Actions**<br>
+  Added dedicated "Archive Current Folder" and "Archive All" action buttons to the Gallery toolbar. "Archive Current Folder" moves and merges the active folder into `Archive/<currentFolder>`, preserving its full relative folder hierarchy while keeping other parent files intact. "Archive All" moves all root-adjacent folders and files into the `Archive/` directory.
+- **Enable Archive Function Setting**<br>
+  Added a new setting (`ENABLE_ARCHIVE_OPTION`) under the Settings Archive tab to toggle the visibility of the Archive buttons on the Gallery toolbar.
+- **Gallery Folder Recursive Toggle**<br>
+  Added a quick toggle button (`🌲 Recursive: ON` / `📁 Recursive: OFF`) directly in the folder browser row to seamlessly switch between viewing media recursively across all subfolders or only displaying immediate folder contents.
+- **Right-Aligned Gallery Action Buttons**<br>
+  Aligned the Content Scan, Archive, and progress action buttons cleanly to the far right side of the Gallery toolbar.
+
+### Changed
+- **Folder List Filtering for Hidden Archive**<br>
+  When "Hide Archive" is toggled on in settings, the `Archive` folder is now hidden from the folder list across the backend API and frontend UI.
+
+### Fixed
+- **Real-Time Safe Only Filter Bypass**<br>
+  Fixed an issue where newly generated media arriving over WebSocket was displayed in the Home and Gallery views even when the "Safe Only" toggle was enabled. Incoming real-time media now strictly adheres to active Safe Only and keyword filters.
+
+---
+
 ## [2.0.23] - 2026-08-13
 ### Added
 - **Header Toggle Enable/Disable Customization**<br>
