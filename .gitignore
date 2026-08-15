@@ -9,7 +9,8 @@ Concept.txt
 node_modules
 dist-ssr
 *.local
-
+Frontend Compile.bat
+Frontend Start for Dev.bat
 
 # Config
 config.ini
