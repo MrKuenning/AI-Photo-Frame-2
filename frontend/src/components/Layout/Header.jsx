@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useToggles } from '../../hooks/useToggles';
 import { useMediaFilter } from '../../hooks/useMediaFilter';
@@ -13,9 +13,41 @@ export default function Header({ currentPath }) {
   const toggles = useToggles();
   const { filterType, setFilterType, triggerRefresh } = useMediaFilter();
   const { isConnected } = useWebSocket();
+  const location = useLocation();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const headerRef = useRef(null);
+
+  // Close mobile menu on route changes
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname, location.search]);
+
+  // Close mobile menu when tapping / clicking outside or pressing Escape
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    const handleClickOutside = (event) => {
+      if (headerRef.current && !headerRef.current.contains(event.target)) {
+        setMenuOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('pointerdown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('pointerdown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [menuOpen]);
 
   const handleRefreshClick = async () => {
     try {
@@ -27,12 +59,14 @@ export default function Header({ currentPath }) {
   };
 
   const handleSettingsClick = () => {
+    setMenuOpen(false);
     requireUnlock('settings', authStatus?.settings_passphrase_required, () => {
       setShowSettings(true);
     });
   };
 
   const toggleFullscreen = () => {
+    setMenuOpen(false);
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch(err => {
         console.error(`Error attempting to enable fullscreen: ${err.message}`);
@@ -46,7 +80,7 @@ export default function Header({ currentPath }) {
 
   return (
     <>
-      <header className="header glass">
+      <header className="header glass" ref={headerRef}>
         <div className="header-left">
           <div className="logo" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
             <div>
@@ -169,10 +203,27 @@ export default function Header({ currentPath }) {
           </div>
         </div>
 
-        <button className="mobile-menu-btn btn btn-icon btn-ghost" onClick={() => setMenuOpen(!menuOpen)}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        <button 
+          className="mobile-menu-btn btn btn-icon btn-ghost" 
+          onClick={() => setMenuOpen(!menuOpen)}
+          aria-label={menuOpen ? "Close menu" : "Open menu"}
+          aria-expanded={menuOpen}
+        >
+          {menuOpen ? (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          ) : (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          )}
         </button>
       </header>
+
+      {menuOpen && (
+        <div 
+          className="mobile-menu-backdrop" 
+          onClick={() => setMenuOpen(false)} 
+          aria-hidden="true" 
+        />
+      )}
 
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
     </>
