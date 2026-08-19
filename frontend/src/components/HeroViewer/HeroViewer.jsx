@@ -6,10 +6,12 @@ import VideoPlayer from '../VideoPlayer/VideoPlayer';
 
 export default function HeroViewer({ item, onNext, onPrev, onClose }) {
   const [loading, setLoading] = useState(true);
+  const [isZoomed, setIsZoomed] = useState(false);
   const containerRef = useRef(null);
 
   useEffect(() => {
     setLoading(true);
+    setIsZoomed(false);
     
     // Auto-focus container for keyboard events
     if (containerRef.current) {
@@ -63,23 +65,38 @@ export default function HeroViewer({ item, onNext, onPrev, onClose }) {
             doubleClick={{ disabled: true }}
             panning={{ disabled: false }}
             pinch={{ disabled: false }}
+            onTransform={(ref, state) => {
+              const zoomed = state.scale > 1.01;
+              if (zoomed !== isZoomed) {
+                setIsZoomed(zoomed);
+              }
+            }}
           >
-            {({ zoomIn, zoomOut, resetTransform }) => (
+            {({ resetTransform }) => (
               <>
                 <TransformComponent 
-                  wrapperClass="hero-transform-wrapper" 
+                  wrapperClass={`hero-transform-wrapper ${isZoomed ? 'zoomed' : ''}`} 
                   contentClass="hero-transform-content"
                   wrapperStyle={{ width: "100%", height: "100%" }}
                   contentStyle={{ width: "100%", height: "100%", display: "flex", justifyContent: "center", alignItems: "center" }}
                 >
                   <div 
-                    onDoubleClick={() => resetTransform(200, "easeOut")}
+                    onDoubleClick={() => {
+                      resetTransform(200, "easeOut");
+                      setIsZoomed(false);
+                    }}
                     style={{ width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
                   >
                     <img
                       src={url}
                       alt={item.filename}
-                      className={`hero-image ${loading ? 'loading' : ''}`}
+                      className={`hero-image ${loading ? 'loading' : ''} ${isZoomed ? 'zoomed' : ''}`}
+                      draggable={!isZoomed ? "true" : "false"}
+                      onDragStart={(e) => {
+                        if (isZoomed) {
+                          e.preventDefault();
+                        }
+                      }}
                       onLoad={() => setLoading(false)}
                       onError={() => setLoading(false)} // Handle errors gracefully
                     />

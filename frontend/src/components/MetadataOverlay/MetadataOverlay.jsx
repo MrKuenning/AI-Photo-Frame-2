@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { fetchMetadata } from '../../utils/api';
+import { fetchMetadata, getMediaFileUrl } from '../../utils/api';
 import './MetadataOverlay.css';
 
 const MetadataContent = ({ metadata, item, loading }) => {
@@ -117,17 +117,42 @@ export default function MetadataOverlay({ item, showBottomPane }) {
 
   if (!item) return null;
 
+  const handleDownload = (e) => {
+    e.stopPropagation();
+    const downloadUrl = getMediaFileUrl(item.id);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = item.filename || 'download';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <>
       {/* Top Right Floating Popup View */}
       <div className={`metadata-overlay ${isOpen ? 'open' : ''}`}>
-        <button 
-          className="metadata-toggle glass" 
-          onClick={() => setIsOpen(!isOpen)}
-          title="Toggle Metadata Details (i)"
-        >
-          i
-        </button>
+        <div className="top-action-buttons">
+          <button 
+            className="top-action-btn download-btn glass" 
+            onClick={handleDownload}
+            title="Download Media (Save original file)"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+          </button>
+
+          <button 
+            className="metadata-toggle top-action-btn glass" 
+            onClick={() => setIsOpen(!isOpen)}
+            title="Toggle Metadata Details (i)"
+          >
+            i
+          </button>
+        </div>
 
         {isOpen && (
           <div className="metadata-panel glass fade-in">

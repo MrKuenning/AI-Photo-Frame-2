@@ -38,6 +38,7 @@
   justify-content: center;
 }
 
+.hero-transform-content img,
 .hero-image {
   width: 100%;
   height: 100%;
@@ -45,6 +46,26 @@
   max-height: 100%;
   object-fit: contain;
   transition: opacity var(--transition-base);
+  pointer-events: auto !important;
+  user-select: auto !important;
+  -webkit-user-select: auto !important;
+}
+
+.hero-image:not(.zoomed) {
+  -webkit-user-drag: auto !important;
+  user-drag: auto !important;
+}
+
+.hero-image.zoomed,
+.hero-transform-wrapper.zoomed .hero-image {
+  -webkit-user-drag: none !important;
+  user-drag: none !important;
+  cursor: grab;
+}
+
+.hero-transform-wrapper.zoomed:active,
+.hero-transform-wrapper.zoomed:active .hero-image {
+  cursor: grabbing;
 }
 
 .hero-image.loading {

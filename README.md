@@ -4,7 +4,7 @@ A modern, web-based photo frame application designed for viewing and managing AI
 
 Powered by a modern React + Vite frontend and a blazing fast FastAPI backend with SQLite indexing.
 
-![Version](https://img.shields.io/badge/version-2.1.0-blue)
+![Version](https://img.shields.io/badge/version-2.1.2-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-green)
 ![FastAPI](https://img.shields.io/badge/fastapi-0.104+-teal)
 ![React](https://img.shields.io/badge/react-18-blue)

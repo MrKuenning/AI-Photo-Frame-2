@@ -2,6 +2,28 @@
 
 All notable changes to the AI Photo Frame application will be documented in this file.
 
+## [2.1.2] - 2026-08-19
+### Fixed
+- **Zoom Panning Activation & Callback Handling**<br>
+  Fixed zoom transform tracking by updating the event hook to `onTransform`, ensuring scale changes immediately activate pan mode and disable image dragging once zoomed in past 100%.
+- **Native Right-Click Context Menu & Pointer Events**<br>
+  Overrode library CSS `pointer-events: none` on the main image element so native right-click context menu options ("Save image as...", "Copy image") work cleanly across the entire viewer.
+- **Chromium Native Drag Event Collision**<br>
+  Suppressed native `dragstart` on the image specifically while zoomed in (`user-drag: none`), preventing Chromium from capturing `mousemove` events so canvas panning moves smoothly without stutter or drag ghosts.
+
+---
+
+## [2.1.1] - 2026-08-18
+### Added
+- **Top-Right One-Click Download Button**<br>
+  Added a dedicated 1-click download button (`⬇`) to the top-right overlay controls next to the `(i)` metadata toggle button, enabling instant saving of original high-resolution media files.
+- **Dynamic Pan vs. Drag-to-Folder Switching**<br>
+  Restored native browser drag-and-drop support when viewing images at normal scale (zoomed out). Users can now directly click and drag images from the viewer into Windows Explorer folders, the Desktop, or external editing apps without triggering unwanted canvas panning.
+- **Auto-Enabled Panning on Zoom**<br>
+  Panning automatically engages when zooming into an image (via mouse wheel, trackpad, or pinch gesture) with interactive grab/grabbing cursor feedback, and seamlessly returns to drag-to-folder mode when double-clicking to reset zoom.
+
+---
+
 ## [2.1.0] - 2026-08-14
 ### Added
 - **Isolated Python Virtual Environment (venv)**<br>
